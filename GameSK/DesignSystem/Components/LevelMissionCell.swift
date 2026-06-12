@@ -46,14 +46,14 @@ final class LevelMissionCell: UICollectionViewCell {
         contentView.backgroundColor = .clear
 
         cardView.translatesAutoresizingMaskIntoConstraints = false
-        cardView.layer.cornerRadius = 16
+        cardView.layer.cornerRadius = 20
         cardView.layer.masksToBounds = false
         cardView.layer.shadowColor = UIColor.black.cgColor
         cardView.layer.shadowOpacity = 0.35
         cardView.layer.shadowRadius = 8
         cardView.layer.shadowOffset = CGSize(width: 0, height: 4)
 
-        gradientLayer.cornerRadius = 16
+        gradientLayer.cornerRadius = 20
         gradientLayer.startPoint = CGPoint(x: 0, y: 0)
         gradientLayer.endPoint = CGPoint(x: 1, y: 1)
         cardView.layer.insertSublayer(gradientLayer, at: 0)
@@ -66,12 +66,12 @@ final class LevelMissionCell: UICollectionViewCell {
         accentStripe.layer.cornerRadius = 2
 
         missionTag.translatesAutoresizingMaskIntoConstraints = false
-        missionTag.font = .systemFont(ofSize: 10, weight: .heavy)
+        missionTag.font = .systemFont(ofSize: 12, weight: .heavy)
         missionTag.textColor = GameStyle.gaugeAmber
         missionTag.text = "MISSION"
 
         numberLabel.translatesAutoresizingMaskIntoConstraints = false
-        numberLabel.font = .systemFont(ofSize: 34, weight: .black)
+        numberLabel.font = .systemFont(ofSize: 52, weight: .black)
         numberLabel.textColor = GameStyle.textPrimary
 
         statusBadge.translatesAutoresizingMaskIntoConstraints = false
@@ -85,14 +85,14 @@ final class LevelMissionCell: UICollectionViewCell {
 
         lockOverlay.translatesAutoresizingMaskIntoConstraints = false
         lockOverlay.backgroundColor = GameStyle.cockpitBlack.withAlphaComponent(0.55)
-        lockOverlay.layer.cornerRadius = 16
+        lockOverlay.layer.cornerRadius = 20
         lockOverlay.isHidden = true
 
         lockIcon.translatesAutoresizingMaskIntoConstraints = false
         lockIcon.image = UIImage(systemName: "lock.fill")
         lockIcon.tintColor = GameStyle.textSecondary
         lockIcon.contentMode = .scaleAspectFit
-        lockIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+        lockIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 34, weight: .semibold)
 
         contentView.addSubview(cardView)
         cardView.addSubview(accentStripe)
@@ -149,7 +149,8 @@ final class LevelMissionCell: UICollectionViewCell {
     func configure(level: Int, isUnlocked: Bool, asteroids: Int, fuelSeconds: Int) {
         numberLabel.text = String(format: "%02d", level)
         targetsChip.setValue("\(asteroids)")
-        fuelChip.setValue("\(fuelSeconds)s")
+        let fuelPercent = Int(round(Double(fuelSeconds) / 120.0 * 100))
+        fuelChip.setValue("\(fuelPercent)%")
 
         let highest = LevelProgressStore.highestUnlockedLevel
         let isCompleted = isUnlocked && level < highest
@@ -215,6 +216,11 @@ final class LevelMissionCell: UICollectionViewCell {
             statusBadge.backgroundColor = GameStyle.panelBlueDark
         }
     }
+
+    func applyCarouselPresentation(scale: CGFloat, alpha: CGFloat) {
+        cardView.transform = CGAffineTransform(scaleX: scale, y: scale)
+        contentView.alpha = alpha
+    }
 }
 
 private final class MissionStatChipView: UIView {
@@ -242,7 +248,7 @@ private final class MissionStatChipView: UIView {
         titleLabel.textColor = GameStyle.textSecondary
 
         valueLabel.translatesAutoresizingMaskIntoConstraints = false
-        valueLabel.font = .monospacedDigitSystemFont(ofSize: 13, weight: .bold)
+        valueLabel.font = .monospacedDigitSystemFont(ofSize: 14, weight: .bold)
         valueLabel.textColor = GameStyle.textPrimary
         valueLabel.textAlignment = .right
 
@@ -251,7 +257,7 @@ private final class MissionStatChipView: UIView {
         addSubview(valueLabel)
 
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: 30),
+            heightAnchor.constraint(equalToConstant: 34),
             iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
             iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
             iconView.widthAnchor.constraint(equalToConstant: 14),

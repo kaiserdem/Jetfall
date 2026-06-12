@@ -8,14 +8,21 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
     private var scnView: SCNView!
     private var gameController: Game3DController!
     private let hudView = GameHUDView()
+    private let pauseMenuView = PauseMenuView()
+    private let missionResultView = MissionResultView()
     private let dPadView = VirtualDPadView()
     private let fireButtonView = FireButtonView()
+    private var isPauseMenuVisible = false
+    private var currentScore = 0
+    private var lastMissionResult: MissionResultView.Result?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = GameStyle.cockpitBlack
         setupSceneView()
         setupHUD()
+        setupPauseMenu()
+        setupMissionResult()
         setupControls()
         startGame()
     }
@@ -35,6 +42,47 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             hudView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             hudView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+
+        hudView.navButton.addTarget(self, action: #selector(menuTapped), for: .touchUpInside)
+    }
+
+    private func setupMissionResult() {
+        missionResultView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(missionResultView)
+        NSLayoutConstraint.activate([
+            missionResultView.topAnchor.constraint(equalTo: view.topAnchor),
+            missionResultView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            missionResultView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            missionResultView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        missionResultView.onPrimaryAction = { [weak self] in
+            self?.handleMissionResultPrimary()
+        }
+        missionResultView.onSecondaryAction = { [weak self] in
+            self?.dismiss(animated: true)
+        }
+    }
+
+    private func setupPauseMenu() {
+        pauseMenuView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(pauseMenuView)
+        NSLayoutConstraint.activate([
+            pauseMenuView.topAnchor.constraint(equalTo: view.topAnchor),
+            pauseMenuView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            pauseMenuView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            pauseMenuView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        pauseMenuView.onContinue = { [weak self] in
+            self?.resumeFromPause()
+        }
+        pauseMenuView.onExit = { [weak self] in
+            self?.dismiss(animated: true)
+        }
+        pauseMenuView.onShop = { [weak self] in
+            self?.showShopPlaceholder()
+        }
     }
 
     private func setupControls() {
@@ -47,14 +95,17 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         fireButtonView.delegate = self
         view.addSubview(fireButtonView)
 
+        let sideInset: CGFloat = 20
+        let bottomInset: CGFloat = 18
+
         NSLayoutConstraint.activate([
-            dPadView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            dPadView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            dPadView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -sideInset),
+            dPadView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -bottomInset),
             dPadView.widthAnchor.constraint(equalToConstant: 190),
             dPadView.heightAnchor.constraint(equalToConstant: 190),
 
-            fireButtonView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            fireButtonView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8),
+            fireButtonView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: sideInset),
+            fireButtonView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -bottomInset),
             fireButtonView.widthAnchor.constraint(equalToConstant: 88),
             fireButtonView.heightAnchor.constraint(equalToConstant: 88)
         ])
@@ -65,6 +116,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
 
         gameController.onScoreChange = { [weak self] score in
             DispatchQueue.main.async {
+                self?.currentScore = score
                 self?.hudView.updateScore(score)
             }
         }
@@ -83,50 +135,119 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
 
         gameController.onLevelComplete = { [weak self] level, hasNextLevel in
             DispatchQueue.main.async {
+                guard let self else { return }
                 LevelProgressStore.unlockNext(after: level)
-                self?.dPadView.clearAll()
-                self?.fireButtonView.clear()
-                self?.hudView.showLevelComplete(level: level, hasNextLevel: hasNextLevel)
+                self.presentMissionResult(
+                    .levelComplete(
+                        level: level,
+                        score: self.currentScore,
+                        hasNextLevel: hasNextLevel
+                    )
+                )
             }
         }
 
         gameController.onGameOver = { [weak self] level, outOfFuel in
             DispatchQueue.main.async {
-                self?.dPadView.clearAll()
-                self?.fireButtonView.clear()
-                self?.hudView.showGameOver(level: level, outOfFuel: outOfFuel)
+                guard let self else { return }
+                self.presentMissionResult(
+                    .gameOver(
+                        level: level,
+                        score: self.currentScore,
+                        outOfFuel: outOfFuel
+                    )
+                )
             }
         }
 
         gameController.onVictory = { [weak self] in
             DispatchQueue.main.async {
-                self?.dPadView.clearAll()
-                self?.fireButtonView.clear()
-                self?.hudView.showVictory()
+                guard let self else { return }
+                self.presentMissionResult(.campaignVictory(score: self.currentScore))
             }
         }
 
-        hudView.onOverlayTapped = { [weak self] in
-            self?.handleOverlayTap()
-        }
-
-        hudView.hideOverlay()
+        currentScore = 0
+        hudView.setMenuEnabled(true)
         hudView.updateScore(0)
+        isPauseMenuVisible = false
+        pauseMenuView.hide(animated: false)
+        missionResultView.dismiss(animated: false)
     }
 
-    private func handleOverlayTap() {
-        guard let action = hudView.overlayAction else { return }
+    @objc private func menuTapped() {
+        guard !isPauseMenuVisible, !missionResultView.isPresented else { return }
+        presentPause()
+    }
 
-        switch action {
-        case .nextLevel:
-            hudView.hideOverlay()
-            gameController.advanceToNextLevel()
-            startingLevel = gameController.currentLevelNumber
-        case .retryLevel:
-            hudView.hideOverlay()
-            gameController.restartCurrentLevel()
-        case .dismissToMissions:
-            dismiss(animated: true)
+    private func presentPause() {
+        dPadView.clearAll()
+        fireButtonView.clear()
+        gameController.pause()
+        setControlsEnabled(false)
+        isPauseMenuVisible = true
+        pauseMenuView.show()
+    }
+
+    private func resumeFromPause() {
+        pauseMenuView.hide { [weak self] in
+            guard let self else { return }
+            self.isPauseMenuVisible = false
+            self.gameController.resume()
+            self.setControlsEnabled(true)
+        }
+    }
+
+    private func setControlsEnabled(_ enabled: Bool) {
+        dPadView.isUserInteractionEnabled = enabled
+        fireButtonView.isUserInteractionEnabled = enabled
+        dPadView.alpha = enabled ? 1 : 0.45
+        fireButtonView.alpha = enabled ? 1 : 0.45
+    }
+
+    private func showShopPlaceholder() {
+        let alert = UIAlertController(
+            title: "Shop",
+            message: "The hangar shop is coming soon.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+
+    private func presentMissionResult(_ result: MissionResultView.Result) {
+        lastMissionResult = result
+        dPadView.clearAll()
+        fireButtonView.clear()
+        setControlsEnabled(false)
+        hudView.setMenuEnabled(false)
+        missionResultView.present(result)
+    }
+
+    private func handleMissionResultPrimary() {
+        guard let result = lastMissionResult else { return }
+
+        missionResultView.dismiss { [weak self] in
+            guard let self else { return }
+            self.lastMissionResult = nil
+
+            switch result {
+            case let .levelComplete(_, _, hasNextLevel):
+                if hasNextLevel {
+                    self.hudView.setMenuEnabled(true)
+                    self.setControlsEnabled(true)
+                    self.gameController.advanceToNextLevel()
+                    self.startingLevel = self.gameController.currentLevelNumber
+                } else {
+                    self.dismiss(animated: true)
+                }
+            case .gameOver:
+                self.hudView.setMenuEnabled(true)
+                self.setControlsEnabled(true)
+                self.gameController.restartCurrentLevel()
+            case .campaignVictory:
+                self.dismiss(animated: true)
+            }
         }
     }
 

@@ -16,6 +16,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private var score = 0
     private var isGameOver = false
     private var isLevelComplete = false
+    private(set) var isPaused = false
     private var lastUpdateTime: TimeInterval = 0
     private var asteroidSpawnTimer: TimeInterval = 0
     private var fireTimer: TimeInterval = 0
@@ -33,6 +34,11 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private let maxBankAngle: Float = .pi / 6
     private let bankSmoothing: Float = 10
     private let propellerSpeed: Float = 24
+    private let bulletRange: Float = 400
+    private let bulletSpeed: Float = 320
+    private let enemyHitRadius: Float = 2.1
+    private let bulletHitRadius: Float = 0.35
+    private var activeBullets: [ActiveBullet] = []
 
     var onScoreChange: ((Int) -> Void)?
     var onLevelProgress: ((Int, Int, Int) -> Void)?
@@ -128,13 +134,34 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         beginLevel(1)
     }
 
+    func pause() {
+        guard !isPaused, !isGameOver, !isLevelComplete else { return }
+        isPaused = true
+        isFiring = false
+        fireTimer = 0
+        activeDirections = []
+        scene.isPaused = true
+        scnView?.isPlaying = false
+    }
+
+    func resume() {
+        guard isPaused else { return }
+        isPaused = false
+        lastUpdateTime = 0
+        scene.isPaused = false
+        scnView?.isPlaying = true
+    }
+
     private func beginLevel(_ level: Int) {
         currentLevel = max(1, min(LevelConfigFactory.totalLevels, level))
         levelConfig = LevelConfigFactory.config(for: currentLevel)
         killsThisLevel = 0
         isLevelComplete = false
+        isPaused = false
         lastUpdateTime = 0
         isGameOver = false
+        scene.isPaused = false
+        scnView?.isPlaying = true
         isFiring = false
         fireTimer = 0
         asteroidSpawnTimer = 0
@@ -149,14 +176,20 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         onFuelChange?(fuelRemaining, levelConfig.fuelDuration)
 
         clearEnemies()
+        clearBullets()
         spawnInitialAsteroids()
         notifyLevelProgress()
     }
 
     private func clearEnemies() {
         worldNode.childNodes
-            .filter { $0.name == "enemy" || $0.name == "bullet" }
+            .filter { $0.name == "enemy" }
             .forEach { $0.removeFromParentNode() }
+    }
+
+    private func clearBullets() {
+        activeBullets.forEach { $0.node.removeFromParentNode() }
+        activeBullets.removeAll()
     }
 
     private func spawnInitialAsteroids() {
@@ -202,12 +235,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     // MARK: - Input
 
     func setDirections(_ directions: Set<MoveDirection>) {
-        guard !isGameOver, !isLevelComplete else { return }
+        guard !isGameOver, !isLevelComplete, !isPaused else { return }
         activeDirections = directions
     }
 
     func setFiring(_ firing: Bool) {
-        guard !isGameOver, !isLevelComplete else { return }
+        guard !isGameOver, !isLevelComplete, !isPaused else { return }
         isFiring = firing
         if !firing {
             fireTimer = 0
@@ -224,11 +257,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         let delta = min(Float(time - lastUpdateTime), 1.0 / 30.0)
         lastUpdateTime = time
 
-        guard !isGameOver, !isLevelComplete else { return }
+        guard !isGameOver, !isLevelComplete, !isPaused else { return }
 
         updatePlayer(delta: delta)
         updateCamera(delta: delta)
         scrollWorld(delta: delta)
+        updateBullets(delta: delta)
         updateFuel(delta: delta)
 
         asteroidSpawnTimer += TimeInterval(delta)
@@ -322,7 +356,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         let shape = SCNPhysicsShape(geometry: SCNSphere(radius: hitRadius))
         let body = SCNPhysicsBody(type: .kinematic, shape: shape)
         body.categoryBitMask = PhysicsCategory.enemy
-        body.contactTestBitMask = PhysicsCategory.player | PhysicsCategory.playerBullet
+        body.contactTestBitMask = PhysicsCategory.player
         body.collisionBitMask = PhysicsCategory.none
         asteroid.physicsBody = body
 
@@ -338,31 +372,125 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     }
 
     private func fireBullet() {
-        let bullet = SCNNode(geometry: SCNSphere(radius: 0.18))
+        let bullet = SCNNode(geometry: SCNSphere(radius: 0.22))
         let material = SCNMaterial()
         material.diffuse.contents = UIColor(red: 1, green: 0.92, blue: 0.2, alpha: 1)
         material.emission.contents = UIColor(red: 0.9, green: 0.7, blue: 0.1, alpha: 1)
         bullet.geometry?.materials = [material]
         bullet.name = "bullet"
-        bullet.position = SCNVector3(
-            playerRoot.position.x,
-            playerRoot.position.y,
-            playerRoot.position.z + 2.2
+
+        let muzzle = playerRoot.presentation.worldPosition
+        bullet.position = SCNVector3(muzzle.x, muzzle.y, muzzle.z + 2.4)
+        scene.rootNode.addChildNode(bullet)
+
+        let worldPosition = bullet.presentation.worldPosition
+        activeBullets.append(
+            ActiveBullet(
+                node: bullet,
+                traveled: 0,
+                previousWorldPosition: worldPosition
+            )
         )
+    }
 
-        let bulletSphere = SCNSphere(radius: 0.18)
-        let bulletShape = SCNPhysicsShape(geometry: bulletSphere)
-        let body = SCNPhysicsBody(type: .kinematic, shape: bulletShape)
-        body.categoryBitMask = PhysicsCategory.playerBullet
-        body.contactTestBitMask = PhysicsCategory.enemy
-        body.collisionBitMask = PhysicsCategory.none
-        bullet.physicsBody = body
+    private func updateBullets(delta: Float) {
+        guard !activeBullets.isEmpty else { return }
 
-        worldNode.addChildNode(bullet)
+        let step = bulletSpeed * delta
+        let hitRadius = enemyHitRadius + bulletHitRadius
+        var remainingBullets: [ActiveBullet] = []
 
-        let travel = SCNAction.move(by: SCNVector3(0, 0, 90), duration: 1.1)
-        let remove = SCNAction.removeFromParentNode()
-        bullet.runAction(SCNAction.sequence([travel, remove]))
+        for var bullet in activeBullets {
+            let startPosition = bullet.node.presentation.worldPosition
+            bullet.node.position.z += step
+            bullet.traveled += step
+
+            let endPosition = bullet.node.presentation.worldPosition
+
+            if bullet.traveled >= bulletRange {
+                bullet.node.removeFromParentNode()
+                continue
+            }
+
+            if let enemy = enemyHitByBullet(
+                from: startPosition,
+                to: endPosition,
+                hitRadius: hitRadius
+            ) {
+                bullet.node.removeFromParentNode()
+                handleBulletHit(enemy: enemy)
+                continue
+            }
+
+            bullet.previousWorldPosition = endPosition
+            remainingBullets.append(bullet)
+        }
+
+        activeBullets = remainingBullets
+    }
+
+    private func enemyHitByBullet(
+        from start: SCNVector3,
+        to end: SCNVector3,
+        hitRadius: Float
+    ) -> SCNNode? {
+        for enemy in worldNode.childNodes where enemy.name == "enemy" {
+            let center = enemy.presentation.worldPosition
+            if segmentIntersectsSphere(
+                segmentStart: start,
+                segmentEnd: end,
+                sphereCenter: center,
+                radius: hitRadius
+            ) {
+                return enemy
+            }
+        }
+        return nil
+    }
+
+    private func handleBulletHit(enemy: SCNNode) {
+        addExplosion(at: enemy.presentation.worldPosition)
+        enemy.removeFromParentNode()
+        score += 10
+        onScoreChange?(score)
+        registerKill()
+    }
+
+    private func segmentIntersectsSphere(
+        segmentStart: SCNVector3,
+        segmentEnd: SCNVector3,
+        sphereCenter: SCNVector3,
+        radius: Float
+    ) -> Bool {
+        let dx = segmentEnd.x - segmentStart.x
+        let dy = segmentEnd.y - segmentStart.y
+        let dz = segmentEnd.z - segmentStart.z
+        let lengthSquared = dx * dx + dy * dy + dz * dz
+
+        guard lengthSquared > 0.0001 else {
+            return distance(segmentStart, sphereCenter) <= radius
+        }
+
+        var t = (
+            (sphereCenter.x - segmentStart.x) * dx
+                + (sphereCenter.y - segmentStart.y) * dy
+                + (sphereCenter.z - segmentStart.z) * dz
+        ) / lengthSquared
+        t = max(0, min(1, t))
+
+        let closest = SCNVector3(
+            segmentStart.x + dx * t,
+            segmentStart.y + dy * t,
+            segmentStart.z + dz * t
+        )
+        return distance(closest, sphereCenter) <= radius
+    }
+
+    private func distance(_ a: SCNVector3, _ b: SCNVector3) -> Float {
+        let dx = a.x - b.x
+        let dy = a.y - b.y
+        let dz = a.z - b.z
+        return sqrt(dx * dx + dy * dy + dz * dz)
     }
 
     // MARK: - Physics
@@ -380,22 +508,6 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             return
         }
 
-        let isBulletHit = (maskA == PhysicsCategory.playerBullet && maskB == PhysicsCategory.enemy)
-            || (maskB == PhysicsCategory.playerBullet && maskA == PhysicsCategory.enemy)
-        guard isBulletHit else { return }
-
-        let bulletNode = maskA == PhysicsCategory.playerBullet ? contact.nodeA : contact.nodeB
-        let enemyNode = maskA == PhysicsCategory.enemy ? contact.nodeA : contact.nodeB
-
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.addExplosion(at: enemyNode.worldPosition)
-            bulletNode.removeFromParentNode()
-            enemyNode.removeFromParentNode()
-            self.score += 10
-            self.onScoreChange?(self.score)
-            self.registerKill()
-        }
     }
 
     private func registerKill() {
@@ -437,4 +549,10 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             self.onGameOver?(self.currentLevel, outOfFuel)
         }
     }
+}
+
+private struct ActiveBullet {
+    let node: SCNNode
+    var traveled: Float
+    var previousWorldPosition: SCNVector3
 }
