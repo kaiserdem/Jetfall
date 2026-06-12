@@ -8,7 +8,7 @@ final class GameHUDView: UIView {
     private let progressLabel = UILabel()
     private let scoreLabel = UILabel()
     private let fuelGauge = FuelGaugeView()
-    let navButton = AviatorNavButton(style: .compact(symbol: "line.3.horizontal"))
+    let pauseButton = AviatorNavButton(style: .labeled(symbol: "pause.fill", title: "Pause"))
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -40,7 +40,7 @@ final class GameHUDView: UIView {
 
         addLayoutGuide(topBarGuide)
 
-        addSubview(navButton)
+        addSubview(pauseButton)
 
         addSubview(statsPanel)
         statsPanel.addSubview(levelLabel)
@@ -56,17 +56,17 @@ final class GameHUDView: UIView {
             topBarGuide.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             topBarGuide.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
 
-            navButton.leadingAnchor.constraint(equalTo: topBarGuide.leadingAnchor),
-            navButton.topAnchor.constraint(equalTo: topBarGuide.topAnchor),
+            pauseButton.leadingAnchor.constraint(equalTo: topBarGuide.leadingAnchor),
+            pauseButton.topAnchor.constraint(equalTo: topBarGuide.topAnchor),
 
             fuelGauge.trailingAnchor.constraint(equalTo: topBarGuide.trailingAnchor),
-            fuelGauge.centerYAnchor.constraint(equalTo: navButton.centerYAnchor),
+            fuelGauge.centerYAnchor.constraint(equalTo: pauseButton.centerYAnchor),
             fuelGauge.widthAnchor.constraint(equalToConstant: 148),
 
-            statsPanel.centerYAnchor.constraint(equalTo: navButton.centerYAnchor),
+            statsPanel.centerYAnchor.constraint(equalTo: pauseButton.centerYAnchor),
             statsCenterX,
             statsPanel.leadingAnchor.constraint(
-                greaterThanOrEqualTo: navButton.trailingAnchor,
+                greaterThanOrEqualTo: pauseButton.trailingAnchor,
                 constant: 12
             ),
             statsPanel.trailingAnchor.constraint(
@@ -83,12 +83,12 @@ final class GameHUDView: UIView {
             scoreLabel.leadingAnchor.constraint(equalTo: levelLabel.leadingAnchor),
             scoreLabel.bottomAnchor.constraint(equalTo: statsPanel.bottomAnchor, constant: -10),
 
-            topBarGuide.bottomAnchor.constraint(equalTo: navButton.bottomAnchor)
+            topBarGuide.bottomAnchor.constraint(equalTo: pauseButton.bottomAnchor)
         ])
     }
 
-    func setMenuEnabled(_ enabled: Bool) {
-        navButton.isEnabled = enabled
+    func setPauseEnabled(_ enabled: Bool) {
+        pauseButton.isEnabled = enabled
     }
 
     func updateLevelProgress(level: Int, destroyed: Int, required: Int) {

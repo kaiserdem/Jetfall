@@ -43,7 +43,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             hudView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
-        hudView.navButton.addTarget(self, action: #selector(menuTapped), for: .touchUpInside)
+        hudView.pauseButton.addTarget(self, action: #selector(pauseTapped), for: .touchUpInside)
     }
 
     private func setupMissionResult() {
@@ -168,14 +168,14 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         }
 
         currentScore = 0
-        hudView.setMenuEnabled(true)
+        hudView.setPauseEnabled(true)
         hudView.updateScore(0)
         isPauseMenuVisible = false
         pauseMenuView.hide(animated: false)
         missionResultView.dismiss(animated: false)
     }
 
-    @objc private func menuTapped() {
+    @objc private func pauseTapped() {
         guard !isPauseMenuVisible, !missionResultView.isPresented else { return }
         presentPause()
     }
@@ -220,7 +220,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         dPadView.clearAll()
         fireButtonView.clear()
         setControlsEnabled(false)
-        hudView.setMenuEnabled(false)
+        hudView.setPauseEnabled(false)
         missionResultView.present(result)
     }
 
@@ -234,7 +234,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             switch result {
             case let .levelComplete(_, _, hasNextLevel):
                 if hasNextLevel {
-                    self.hudView.setMenuEnabled(true)
+                    self.hudView.setPauseEnabled(true)
                     self.setControlsEnabled(true)
                     self.gameController.advanceToNextLevel()
                     self.startingLevel = self.gameController.currentLevelNumber
@@ -242,7 +242,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
                     self.dismiss(animated: true)
                 }
             case .gameOver:
-                self.hudView.setMenuEnabled(true)
+                self.hudView.setPauseEnabled(true)
                 self.setControlsEnabled(true)
                 self.gameController.restartCurrentLevel()
             case .campaignVictory:

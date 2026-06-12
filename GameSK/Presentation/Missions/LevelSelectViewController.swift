@@ -11,7 +11,16 @@ final class LevelSelectViewController: UIViewController {
         static let distanceFactor: CGFloat = 0.48
     }
 
+    private enum LayoutMetrics {
+        static let horizontalInset: CGFloat = 16
+        static let stackSpacing: CGFloat = 12
+        static let topInset: CGFloat = 10
+        static let bottomInset: CGFloat = 12
+    }
+
     private var starfieldView: StarfieldBackgroundView?
+    private let contentStack = UIStackView()
+    private let topBar = UIView()
     private let headerPanel = UIView()
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
@@ -22,6 +31,7 @@ final class LevelSelectViewController: UIViewController {
     private let backButton = AviatorNavButton(style: .labeled(symbol: "chevron.left", title: "Hangar"))
     private var collectionView: UICollectionView!
 
+    private let pagerBar = MissionPagerBar()
     private let footerPanel = UIView()
     private let missionCounterLabel = UILabel()
     private let missionHintLabel = UILabel()
@@ -30,14 +40,17 @@ final class LevelSelectViewController: UIViewController {
     private let levels = Array(1...LevelConfigFactory.totalLevels)
     private var focusedLevel = 1
     private var didPerformInitialScroll = false
+    private var carouselScrollOffset: CGPoint = .zero
+    private var carouselContainerWidth: CGFloat = 0
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = GameStyle.cockpitBlack
-        setupHeader()
-        setupFooter()
-        setupCollectionView()
-        setupBackButton()
+        configureHeaderPanel()
+        configureFooterPanel()
+        configureCollectionView()
+        configurePagerBar()
+        setupContentStack()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -74,7 +87,7 @@ final class LevelSelectViewController: UIViewController {
         true
     }
 
-    private func setupHeader() {
+    private func configureHeaderPanel() {
         headerPanel.translatesAutoresizingMaskIntoConstraints = false
         GameStyle.stylePanel(headerPanel, cornerRadius: 14)
         headerPanel.backgroundColor = GameStyle.panelBlueDark.withAlphaComponent(0.88)
@@ -86,7 +99,7 @@ final class LevelSelectViewController: UIViewController {
         titleLabel.textAlignment = .center
 
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        subtitleLabel.text = "Swipe to browse sectors"
+        subtitleLabel.text = "Swipe or use sector controls below"
         GameStyle.styleSubtitleLabel(subtitleLabel, size: 14)
         subtitleLabel.textAlignment = .center
 
@@ -104,7 +117,6 @@ final class LevelSelectViewController: UIViewController {
         progressFill.backgroundColor = GameStyle.accentRed
         progressFill.layer.cornerRadius = 3
 
-        view.addSubview(headerPanel)
         headerPanel.addSubview(titleLabel)
         headerPanel.addSubview(subtitleLabel)
         headerPanel.addSubview(progressLabel)
@@ -114,10 +126,6 @@ final class LevelSelectViewController: UIViewController {
         progressFillWidth = progressFill.widthAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
-            headerPanel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            headerPanel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            headerPanel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-
             titleLabel.topAnchor.constraint(equalTo: headerPanel.topAnchor, constant: 14),
             titleLabel.centerXAnchor.constraint(equalTo: headerPanel.centerXAnchor),
 
@@ -141,7 +149,7 @@ final class LevelSelectViewController: UIViewController {
         ])
     }
 
-    private func setupFooter() {
+    private func configureFooterPanel() {
         footerPanel.translatesAutoresizingMaskIntoConstraints = false
         GameStyle.stylePanel(footerPanel, cornerRadius: 14)
         footerPanel.backgroundColor = GameStyle.panelBlueDark.withAlphaComponent(0.88)
@@ -159,16 +167,11 @@ final class LevelSelectViewController: UIViewController {
         GameStyle.applyPrimaryButton(launchButton, title: "Launch Mission")
         launchButton.addTarget(self, action: #selector(launchFocusedLevel), for: .touchUpInside)
 
-        view.addSubview(footerPanel)
         footerPanel.addSubview(missionCounterLabel)
         footerPanel.addSubview(missionHintLabel)
         footerPanel.addSubview(launchButton)
 
         NSLayoutConstraint.activate([
-            footerPanel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            footerPanel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            footerPanel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
-
             missionCounterLabel.topAnchor.constraint(equalTo: footerPanel.topAnchor, constant: 14),
             missionCounterLabel.leadingAnchor.constraint(equalTo: footerPanel.leadingAnchor, constant: 16),
             missionCounterLabel.trailingAnchor.constraint(equalTo: footerPanel.trailingAnchor, constant: -16),
@@ -184,18 +187,16 @@ final class LevelSelectViewController: UIViewController {
         ])
     }
 
-    private func setupBackButton() {
-        backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
-        view.addSubview(backButton)
-
-        NSLayoutConstraint.activate([
-            backButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            backButton.centerYAnchor.constraint(equalTo: headerPanel.topAnchor, constant: 22)
-        ])
-        view.bringSubviewToFront(backButton)
+    private func configurePagerBar() {
+        pagerBar.onPrevious = { [weak self] in
+            self?.stepFocusedLevel(by: -1)
+        }
+        pagerBar.onNext = { [weak self] in
+            self?.stepFocusedLevel(by: 1)
+        }
     }
 
-    private func setupCollectionView() {
+    private func configureCollectionView() {
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: makeCarouselLayout())
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.backgroundColor = .clear
@@ -205,13 +206,39 @@ final class LevelSelectViewController: UIViewController {
         collectionView.register(LevelMissionCell.self, forCellWithReuseIdentifier: LevelMissionCell.reuseID)
         collectionView.dataSource = self
         collectionView.delegate = self
-        view.addSubview(collectionView)
+        collectionView.setContentHuggingPriority(.defaultLow, for: .vertical)
+        collectionView.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+    }
+
+    private func setupContentStack() {
+        topBar.translatesAutoresizingMaskIntoConstraints = false
+        backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        topBar.addSubview(backButton)
 
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: headerPanel.bottomAnchor, constant: 8),
-            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: footerPanel.topAnchor, constant: -12)
+            backButton.topAnchor.constraint(equalTo: topBar.topAnchor),
+            backButton.leadingAnchor.constraint(equalTo: topBar.leadingAnchor),
+            backButton.bottomAnchor.constraint(equalTo: topBar.bottomAnchor)
+        ])
+
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.axis = .vertical
+        contentStack.alignment = .fill
+        contentStack.distribution = .fill
+        contentStack.spacing = LayoutMetrics.stackSpacing
+        contentStack.addArrangedSubview(topBar)
+        contentStack.addArrangedSubview(headerPanel)
+        contentStack.addArrangedSubview(collectionView)
+        contentStack.addArrangedSubview(pagerBar)
+        contentStack.addArrangedSubview(footerPanel)
+
+        view.addSubview(contentStack)
+
+        NSLayoutConstraint.activate([
+            contentStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: LayoutMetrics.topInset),
+            contentStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: LayoutMetrics.horizontalInset),
+            contentStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -LayoutMetrics.horizontalInset),
+            contentStack.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -LayoutMetrics.bottomInset)
         ])
     }
 
@@ -241,13 +268,26 @@ final class LevelSelectViewController: UIViewController {
                 trailing: CarouselMetrics.horizontalInset
             )
             section.visibleItemsInvalidationHandler = { [weak self] visibleItems, scrollOffset, environment in
+                guard let self else { return }
+
                 let containerWidth = environment.container.effectiveContentSize.width
+                self.carouselScrollOffset = scrollOffset
+                self.carouselContainerWidth = containerWidth
+
                 for item in visibleItems where item.representedElementCategory == .cell {
-                    self?.applyCarouselMetrics(
+                    self.applyCarouselMetrics(
                         to: item,
                         scrollOffset: scrollOffset,
                         containerWidth: containerWidth
                     )
+                }
+
+                if let level = self.focusedLevel(
+                    in: visibleItems,
+                    scrollOffset: scrollOffset,
+                    containerWidth: containerWidth
+                ) {
+                    self.reportFocusedLevel(level)
                 }
             }
             return section
@@ -274,6 +314,18 @@ final class LevelSelectViewController: UIViewController {
         )
     }
 
+    private func reportFocusedLevel(_ level: Int) {
+        guard level != focusedLevel else { return }
+
+        if Thread.isMainThread {
+            updateFocusedLevel(level)
+        } else {
+            DispatchQueue.main.async { [weak self] in
+                self?.updateFocusedLevel(level)
+            }
+        }
+    }
+
     private func updateFocusedLevel(_ level: Int? = nil) {
         if let level {
             focusedLevel = level
@@ -281,37 +333,77 @@ final class LevelSelectViewController: UIViewController {
             focusedLevel = levelAtCarouselCenter()
         }
 
+        let config = LevelConfigFactory.config(for: focusedLevel)
+        let highest = LevelProgressStore.highestUnlockedLevel
+        let isUnlocked = LevelProgressStore.isUnlocked(focusedLevel)
+        let isCompleted = isUnlocked && focusedLevel < highest
+        let isCurrent = isUnlocked && focusedLevel == highest
+        let missionStats = "Targets: \(config.asteroidsToDestroy) · Fuel: \(Int(config.fuelDuration))s"
+
         missionCounterLabel.text = "MISSION \(String(format: "%02d", focusedLevel)) / \(levels.count)"
 
-        let isUnlocked = LevelProgressStore.isUnlocked(focusedLevel)
-        launchButton.isEnabled = isUnlocked
-        launchButton.alpha = isUnlocked ? 1 : 0.45
-
         if !isUnlocked {
-            missionHintLabel.text = "Complete previous missions to unlock"
-        } else if focusedLevel == LevelProgressStore.highestUnlockedLevel {
-            missionHintLabel.text = "Ready for launch"
-        } else if focusedLevel < LevelProgressStore.highestUnlockedLevel {
-            missionHintLabel.text = "Sector cleared — replay anytime"
+            missionHintLabel.text = "\(missionStats) — complete previous missions to unlock"
+            GameStyle.applySecondaryButton(launchButton, title: "Locked")
+            launchButton.isEnabled = false
+            launchButton.alpha = 0.45
+        } else if isCurrent {
+            missionHintLabel.text = "\(missionStats) — ready for launch"
+            GameStyle.applyPrimaryButton(launchButton, title: "Launch Mission")
+            launchButton.isEnabled = true
+            launchButton.alpha = 1
+        } else if isCompleted {
+            missionHintLabel.text = "\(missionStats) — sector cleared, replay anytime"
+            GameStyle.applyPrimaryButton(launchButton, title: "Replay Mission")
+            launchButton.isEnabled = true
+            launchButton.alpha = 1
         } else {
-            missionHintLabel.text = "Select a mission"
+            missionHintLabel.text = missionStats
+            GameStyle.applyPrimaryButton(launchButton, title: "Launch Mission")
+            launchButton.isEnabled = true
+            launchButton.alpha = 1
         }
+
+        pagerBar.update(level: focusedLevel, total: levels.count)
+    }
+
+    private func focusedLevel(
+        in visibleItems: [NSCollectionLayoutVisibleItem],
+        scrollOffset: CGPoint,
+        containerWidth: CGFloat
+    ) -> Int? {
+        let centerX = scrollOffset.x + containerWidth / 2
+        guard let centeredItem = visibleItems
+            .filter({ $0.representedElementCategory == .cell })
+            .min(by: { lhs, rhs in
+                abs(lhs.frame.midX - centerX) < abs(rhs.frame.midX - centerX)
+            }) else {
+            return nil
+        }
+
+        let index = centeredItem.indexPath.item
+        guard levels.indices.contains(index) else { return nil }
+        return levels[index]
+    }
+
+    private func stepFocusedLevel(by delta: Int) {
+        let nextLevel = max(1, min(levels.count, focusedLevel + delta))
+        guard nextLevel != focusedLevel else { return }
+        scrollToLevel(nextLevel, animated: true)
+        updateFocusedLevel(nextLevel)
+        applyCarouselTransforms()
     }
 
     private func levelAtCarouselCenter() -> Int {
-        let center = CGPoint(
-            x: collectionView.contentOffset.x + collectionView.bounds.width / 2,
-            y: collectionView.bounds.height / 2
-        )
-        if let indexPath = collectionView.indexPathForItem(at: center) {
-            return levels[indexPath.item]
-        }
+        let containerWidth = carouselContainerWidth > 0
+            ? carouselContainerWidth
+            : collectionView.bounds.width
+        let centerX = carouselScrollOffset.x + containerWidth / 2
 
-        let visible = collectionView.indexPathsForVisibleItems.sorted { $0.item < $1.item }
+        let visible = collectionView.indexPathsForVisibleItems
         guard let closestPath = visible.min(by: { lhs, rhs in
-            let lhsCenter = collectionView.layoutAttributesForItem(at: lhs)?.center.x ?? 0
-            let rhsCenter = collectionView.layoutAttributesForItem(at: rhs)?.center.x ?? 0
-            let centerX = collectionView.contentOffset.x + collectionView.bounds.width / 2
+            let lhsCenter = collectionView.layoutAttributesForItem(at: lhs)?.frame.midX ?? 0
+            let rhsCenter = collectionView.layoutAttributesForItem(at: rhs)?.frame.midX ?? 0
             return abs(lhsCenter - centerX) < abs(rhsCenter - centerX)
         }) else {
             return focusedLevel
@@ -444,20 +536,13 @@ extension LevelSelectViewController: UICollectionViewDataSource, UICollectionVie
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        applyCarouselTransforms()
-        updateFocusedLevel()
-    }
-
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         updateFocusedLevel()
-        applyCarouselTransforms()
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         guard !decelerate else { return }
         updateFocusedLevel()
-        applyCarouselTransforms()
     }
 }

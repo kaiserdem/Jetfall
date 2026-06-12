@@ -3,7 +3,7 @@ import UIKit
 final class AviatorNavButton: UIControl {
 
     enum Style {
-        case compact(symbol: String)
+        case compact(symbol: String, accessibilityLabel: String? = nil)
         case labeled(symbol: String, title: String)
     }
 
@@ -108,10 +108,10 @@ final class AviatorNavButton: UIControl {
 
     private func apply(_ style: Style) {
         switch style {
-        case let .compact(symbol):
+        case let .compact(symbol, accessibilityLabel):
             iconView.image = UIImage(systemName: symbol)
             titleLabel.isHidden = true
-            accessibilityLabel = "Menu"
+            self.accessibilityLabel = accessibilityLabel ?? "Menu"
             widthConstraint?.constant = 44
 
         case let .labeled(symbol, title):
