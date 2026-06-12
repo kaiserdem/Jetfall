@@ -144,7 +144,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         asteroidSpawnTimer += TimeInterval(delta)
         fireTimer += TimeInterval(delta)
 
-        if asteroidSpawnTimer >= 1.8 {
+        if asteroidSpawnTimer >= 0.9 {
             asteroidSpawnTimer = 0
             spawnAsteroid()
         }

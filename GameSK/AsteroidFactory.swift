@@ -57,7 +57,7 @@ enum AsteroidFactory {
     }
 
     static func initialSpawnDistances() -> [Float] {
-        [170, 230, 290]
+        [170, 200, 230, 260, 290, 320]
     }
 
     private static func isSeparated(
