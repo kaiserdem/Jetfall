@@ -3,15 +3,17 @@ import UIKit
 
 class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDelegate {
 
+    var startingLevel = 1
+
     private var scnView: SCNView!
     private var gameController: Game3DController!
     private let hudView = GameHUDView()
     private let dPadView = VirtualDPadView()
     private let fireButtonView = FireButtonView()
-    private var startingLevel = 1
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = GameStyle.cockpitBlack
         setupSceneView()
         setupHUD()
         setupControls()
@@ -21,7 +23,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
     private func setupSceneView() {
         scnView = SCNView(frame: view.bounds)
         scnView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        view.addSubview(scnView)
+        view.insertSubview(scnView, at: 0)
     }
 
     private func setupHUD() {
@@ -73,19 +75,26 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             }
         }
 
+        gameController.onFuelChange = { [weak self] remaining, total in
+            DispatchQueue.main.async {
+                self?.hudView.updateFuel(remaining: remaining, total: total)
+            }
+        }
+
         gameController.onLevelComplete = { [weak self] level, hasNextLevel in
             DispatchQueue.main.async {
+                LevelProgressStore.unlockNext(after: level)
                 self?.dPadView.clearAll()
                 self?.fireButtonView.clear()
                 self?.hudView.showLevelComplete(level: level, hasNextLevel: hasNextLevel)
             }
         }
 
-        gameController.onGameOver = { [weak self] level in
+        gameController.onGameOver = { [weak self] level, outOfFuel in
             DispatchQueue.main.async {
                 self?.dPadView.clearAll()
                 self?.fireButtonView.clear()
-                self?.hudView.showGameOver(level: level)
+                self?.hudView.showGameOver(level: level, outOfFuel: outOfFuel)
             }
         }
 
@@ -112,19 +121,13 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         case .nextLevel:
             hudView.hideOverlay()
             gameController.advanceToNextLevel()
+            startingLevel = gameController.currentLevelNumber
         case .retryLevel:
             hudView.hideOverlay()
             gameController.restartCurrentLevel()
-        case .restartCampaign:
-            startingLevel = 1
-            restartGame()
+        case .dismissToMissions:
+            dismiss(animated: true)
         }
-    }
-
-    private func restartGame() {
-        scnView.delegate = nil
-        scnView.scene = nil
-        startGame()
     }
 
     // MARK: - VirtualDPadDelegate

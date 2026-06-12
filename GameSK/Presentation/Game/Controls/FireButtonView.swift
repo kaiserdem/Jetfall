@@ -13,13 +13,9 @@ final class FireButtonView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        button.setTitle("●", for: .normal)
-        button.titleLabel?.font = .boldSystemFont(ofSize: 28)
-        button.tintColor = .white
-        button.backgroundColor = UIColor(red: 0.85, green: 0.2, blue: 0.15, alpha: 0.55)
-        button.layer.cornerRadius = buttonSize / 2
-        button.layer.borderColor = UIColor(white: 1, alpha: 0.55).cgColor
-        button.layer.borderWidth = 2
+        button.setTitle("FIRE", for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 11, weight: .heavy)
+        GameStyle.styleControlButton(button, cornerRadius: buttonSize / 2)
         button.addTarget(self, action: #selector(buttonDown), for: .touchDown)
         button.addTarget(self, action: #selector(buttonUp), for: [.touchUpInside, .touchUpOutside, .touchCancel])
         addSubview(button)
@@ -46,9 +42,11 @@ final class FireButtonView: UIView {
     }
 
     private func setPressed(_ pressed: Bool) {
-        button.backgroundColor = pressed
-            ? UIColor(red: 1, green: 0.35, blue: 0.2, alpha: 0.85)
-            : UIColor(red: 0.85, green: 0.2, blue: 0.15, alpha: 0.55)
+        if pressed {
+            GameStyle.styleControlButtonPressed(button)
+        } else {
+            GameStyle.styleControlButtonReleased(button)
+        }
         button.transform = pressed ? CGAffineTransform(scaleX: 0.92, y: 0.92) : .identity
     }
 

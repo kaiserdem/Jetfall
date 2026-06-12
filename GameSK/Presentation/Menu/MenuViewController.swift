@@ -4,14 +4,14 @@ final class MenuViewController: UIViewController {
 
     private var starfieldView: StarfieldBackgroundView?
     private let titleLabel = UILabel()
-    private let playButton = UIButton(type: .system)
+    private let missionsButton = UIButton(type: .system)
     private let activityIndicator = UIActivityIndicatorView(style: .medium)
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = WorldBuilder3D.spaceColor
+        view.backgroundColor = GameStyle.cockpitBlack
         setupTitle()
-        setupPlayButton()
+        setupMissionsButton()
         setupActivityIndicator()
     }
 
@@ -20,7 +20,7 @@ final class MenuViewController: UIViewController {
         GameAssetLoader.shared.beginPreloadingIfNeeded()
         GameAssetLoader.shared.whenReady { [weak self] in
             self?.showStarfieldIfNeeded()
-            self?.updatePlayButtonState()
+            self?.updateMissionsButtonState()
         }
     }
 
@@ -35,14 +35,7 @@ final class MenuViewController: UIViewController {
 
     private func setupTitle() {
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = "GameSK"
-        titleLabel.font = .boldSystemFont(ofSize: 44)
-        titleLabel.textColor = .white
-        titleLabel.textAlignment = .center
-        titleLabel.layer.shadowColor = UIColor.black.cgColor
-        titleLabel.layer.shadowOpacity = 0.45
-        titleLabel.layer.shadowRadius = 6
-        titleLabel.layer.shadowOffset = CGSize(width: 0, height: 2)
+        GameStyle.styleTitleLabel(titleLabel, text: "GameSK")
         view.addSubview(titleLabel)
         NSLayoutConstraint.activate([
             titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -50,32 +43,25 @@ final class MenuViewController: UIViewController {
         ])
     }
 
-    private func setupPlayButton() {
-        playButton.translatesAutoresizingMaskIntoConstraints = false
-        playButton.setTitle("Play", for: .normal)
-        playButton.titleLabel?.font = .boldSystemFont(ofSize: 22)
-        playButton.tintColor = .white
-        playButton.backgroundColor = UIColor(red: 0.85, green: 0.2, blue: 0.15, alpha: 0.75)
-        playButton.layer.cornerRadius = 28
-        playButton.layer.borderColor = UIColor(white: 1, alpha: 0.55).cgColor
-        playButton.layer.borderWidth = 2
-        playButton.contentEdgeInsets = UIEdgeInsets(top: 14, left: 44, bottom: 14, right: 44)
-        playButton.addTarget(self, action: #selector(playTapped), for: .touchUpInside)
-        view.addSubview(playButton)
+    private func setupMissionsButton() {
+        missionsButton.translatesAutoresizingMaskIntoConstraints = false
+        GameStyle.applyPrimaryButton(missionsButton, title: "Missions")
+        missionsButton.addTarget(self, action: #selector(missionsTapped), for: .touchUpInside)
+        view.addSubview(missionsButton)
         NSLayoutConstraint.activate([
-            playButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            playButton.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 36)
+            missionsButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            missionsButton.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 36)
         ])
     }
 
     private func setupActivityIndicator() {
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
-        activityIndicator.color = .white
+        activityIndicator.color = GameStyle.textPrimary
         activityIndicator.hidesWhenStopped = true
         view.addSubview(activityIndicator)
         NSLayoutConstraint.activate([
-            activityIndicator.centerXAnchor.constraint(equalTo: playButton.centerXAnchor),
-            activityIndicator.centerYAnchor.constraint(equalTo: playButton.centerYAnchor)
+            activityIndicator.centerXAnchor.constraint(equalTo: missionsButton.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: missionsButton.centerYAnchor)
         ])
     }
 
@@ -100,34 +86,34 @@ final class MenuViewController: UIViewController {
         }
     }
 
-    private func updatePlayButtonState() {
-        playButton.isEnabled = true
+    private func updateMissionsButtonState() {
+        missionsButton.isEnabled = true
         activityIndicator.stopAnimating()
-        playButton.setTitle("Play", for: .normal)
+        missionsButton.setTitle("Missions", for: .normal)
     }
 
-    @objc private func playTapped() {
-        playButton.isEnabled = false
-        playButton.setTitle("", for: .normal)
+    @objc private func missionsTapped() {
+        missionsButton.isEnabled = false
+        missionsButton.setTitle("", for: .normal)
         activityIndicator.startAnimating()
 
         GameAssetLoader.shared.whenReady { [weak self] in
-            self?.presentGame()
+            self?.presentLevelSelect()
         }
     }
 
-    private func presentGame() {
-        guard let gameViewController = storyboard?.instantiateViewController(
-            withIdentifier: "GameViewController"
-        ) as? GameViewController else {
-            updatePlayButtonState()
+    private func presentLevelSelect() {
+        guard let levelSelect = storyboard?.instantiateViewController(
+            withIdentifier: "LevelSelectViewController"
+        ) else {
+            updateMissionsButtonState()
             return
         }
 
-        gameViewController.modalPresentationStyle = .fullScreen
-        gameViewController.modalTransitionStyle = .crossDissolve
-        present(gameViewController, animated: true) { [weak self] in
-            self?.updatePlayButtonState()
+        levelSelect.modalPresentationStyle = .fullScreen
+        levelSelect.modalTransitionStyle = .crossDissolve
+        present(levelSelect, animated: true) { [weak self] in
+            self?.updateMissionsButtonState()
         }
     }
 }

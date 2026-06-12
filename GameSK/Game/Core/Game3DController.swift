@@ -25,6 +25,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private var currentLevel = 1
     private var levelConfig = LevelConfigFactory.config(for: 1)
     private var killsThisLevel = 0
+    private var fuelRemaining: TimeInterval = 0
 
     private let hasPropeller: Bool
     private let moveSpeed: Float = 14
@@ -35,9 +36,14 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
     var onScoreChange: ((Int) -> Void)?
     var onLevelProgress: ((Int, Int, Int) -> Void)?
+    var onFuelChange: ((TimeInterval, TimeInterval) -> Void)?
     var onLevelComplete: ((Int, Bool) -> Void)?
-    var onGameOver: ((Int) -> Void)?
+    var onGameOver: ((Int, Bool) -> Void)?
     var onVictory: (() -> Void)?
+
+    var currentLevelNumber: Int {
+        currentLevel
+    }
 
     init(scnView: SCNView, startingLevel: Int = 1) {
         self.scnView = scnView
@@ -139,6 +145,9 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         playerRoot.position = SCNVector3(0, 0, 0)
         bankNode.rotation = SCNVector4Zero
 
+        fuelRemaining = levelConfig.fuelDuration
+        onFuelChange?(fuelRemaining, levelConfig.fuelDuration)
+
         clearEnemies()
         spawnInitialAsteroids()
         notifyLevelProgress()
@@ -220,6 +229,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         updatePlayer(delta: delta)
         updateCamera(delta: delta)
         scrollWorld(delta: delta)
+        updateFuel(delta: delta)
 
         asteroidSpawnTimer += TimeInterval(delta)
         fireTimer += TimeInterval(delta)
@@ -268,6 +278,15 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         if hasPropeller {
             propellerAngle += propellerSpeed * delta
             propellerNode.rotation = SCNVector4(1, 0, 0, propellerAngle)
+        }
+    }
+
+    private func updateFuel(delta: Float) {
+        fuelRemaining -= TimeInterval(delta)
+        onFuelChange?(max(0, fuelRemaining), levelConfig.fuelDuration)
+
+        if fuelRemaining <= 0 {
+            triggerGameOver(outOfFuel: true)
         }
     }
 
@@ -357,7 +376,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
         if (maskA == PhysicsCategory.player && maskB == PhysicsCategory.enemy)
             || (maskB == PhysicsCategory.player && maskA == PhysicsCategory.enemy) {
-            triggerGameOver()
+            triggerGameOver(outOfFuel: false)
             return
         }
 
@@ -403,7 +422,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         burst.runAction(SCNAction.sequence([SCNAction.group([grow, fade]), remove]))
     }
 
-    private func triggerGameOver() {
+    private func triggerGameOver(outOfFuel: Bool) {
         guard !isGameOver else { return }
         isGameOver = true
         isFiring = false
@@ -411,9 +430,11 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.addExplosion(at: self.playerRoot.worldPosition)
+            if !outOfFuel {
+                self.addExplosion(at: self.playerRoot.worldPosition)
+            }
             self.playerRoot.isHidden = true
-            self.onGameOver?(self.currentLevel)
+            self.onGameOver?(self.currentLevel, outOfFuel)
         }
     }
 }

@@ -27,11 +27,7 @@ final class VirtualDPadView: UIView {
             button.tag = directionTag(direction)
             button.setTitle(symbol(for: direction), for: .normal)
             button.titleLabel?.font = .boldSystemFont(ofSize: 22)
-            button.tintColor = .white
-            button.backgroundColor = UIColor(white: 0, alpha: 0.35)
-            button.layer.cornerRadius = buttonSize / 2
-            button.layer.borderColor = UIColor(white: 1, alpha: 0.5).cgColor
-            button.layer.borderWidth = 2
+            GameStyle.styleControlButton(button, cornerRadius: buttonSize / 2)
             button.addTarget(self, action: #selector(buttonDown(_:)), for: .touchDown)
             button.addTarget(self, action: #selector(buttonUp(_:)), for: [.touchUpInside, .touchUpOutside, .touchCancel])
             map[direction] = button
@@ -74,9 +70,11 @@ final class VirtualDPadView: UIView {
 
     func setPressed(_ pressed: Bool, for direction: MoveDirection) {
         guard let button = buttons[direction] else { return }
-        button.backgroundColor = pressed
-            ? UIColor(red: 0.85, green: 0.2, blue: 0.15, alpha: 0.65)
-            : UIColor(white: 0, alpha: 0.35)
+        if pressed {
+            GameStyle.styleControlButtonPressed(button)
+        } else {
+            GameStyle.styleControlButtonReleased(button)
+        }
         button.transform = pressed ? CGAffineTransform(scaleX: 0.92, y: 0.92) : .identity
     }
 
