@@ -3,7 +3,7 @@ import UIKit
 
 enum WorldBuilder3D {
 
-    static let spaceColor = UIColor(red: 0.02, green: 0.04, blue: 0.14, alpha: 1)
+    static let spaceColor = UIColor(red: 0.07, green: 0.075, blue: 0.09, alpha: 1)
 
     private static var starsImage: UIImage?
     private static var starOffsetX: Float = 0
