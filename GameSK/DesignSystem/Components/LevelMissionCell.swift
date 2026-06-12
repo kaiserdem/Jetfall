@@ -11,10 +11,13 @@ final class LevelMissionCell: UICollectionViewCell {
     private let missionTag = UILabel()
     private let numberLabel = UILabel()
     private let statusBadge = UILabel()
+    private let lockedInfoStack = UIStackView()
+    private let unlockCaptionLabel = UILabel()
+    private let unlockRequirementLabel = UILabel()
+    private let objectivesCaptionLabel = UILabel()
     private let targetsChip = MissionStatChipView(symbol: "scope", title: "TARGETS")
     private let fuelChip = MissionStatChipView(symbol: "fuelpump.fill", title: "FUEL")
-    private let lockIcon = UIImageView()
-    private let lockOverlay = UIView()
+    private var lockedInfoCollapsedHeight: NSLayoutConstraint?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -80,29 +83,40 @@ final class LevelMissionCell: UICollectionViewCell {
         statusBadge.layer.cornerRadius = 8
         statusBadge.layer.masksToBounds = true
 
+        unlockCaptionLabel.translatesAutoresizingMaskIntoConstraints = false
+        unlockCaptionLabel.font = .systemFont(ofSize: 9, weight: .heavy)
+        unlockCaptionLabel.textColor = GameStyle.textSecondary
+        unlockCaptionLabel.text = "UNLOCK REQUIREMENT"
+
+        unlockRequirementLabel.translatesAutoresizingMaskIntoConstraints = false
+        unlockRequirementLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        unlockRequirementLabel.textColor = GameStyle.textPrimary
+        unlockRequirementLabel.numberOfLines = 2
+
+        objectivesCaptionLabel.translatesAutoresizingMaskIntoConstraints = false
+        objectivesCaptionLabel.font = .systemFont(ofSize: 9, weight: .heavy)
+        objectivesCaptionLabel.textColor = GameStyle.gaugeAmber
+        objectivesCaptionLabel.text = "SECTOR OBJECTIVES"
+
+        lockedInfoStack.translatesAutoresizingMaskIntoConstraints = false
+        lockedInfoStack.axis = .vertical
+        lockedInfoStack.alignment = .leading
+        lockedInfoStack.spacing = 4
+        lockedInfoStack.addArrangedSubview(unlockCaptionLabel)
+        lockedInfoStack.addArrangedSubview(unlockRequirementLabel)
+        lockedInfoStack.addArrangedSubview(objectivesCaptionLabel)
+
         targetsChip.translatesAutoresizingMaskIntoConstraints = false
         fuelChip.translatesAutoresizingMaskIntoConstraints = false
-
-        lockOverlay.translatesAutoresizingMaskIntoConstraints = false
-        lockOverlay.backgroundColor = GameStyle.cockpitBlack.withAlphaComponent(0.55)
-        lockOverlay.layer.cornerRadius = 20
-        lockOverlay.isHidden = true
-
-        lockIcon.translatesAutoresizingMaskIntoConstraints = false
-        lockIcon.image = UIImage(systemName: "lock.fill")
-        lockIcon.tintColor = GameStyle.textSecondary
-        lockIcon.contentMode = .scaleAspectFit
-        lockIcon.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 34, weight: .semibold)
 
         contentView.addSubview(cardView)
         cardView.addSubview(accentStripe)
         cardView.addSubview(missionTag)
         cardView.addSubview(numberLabel)
         cardView.addSubview(statusBadge)
+        cardView.addSubview(lockedInfoStack)
         cardView.addSubview(targetsChip)
         cardView.addSubview(fuelChip)
-        cardView.addSubview(lockOverlay)
-        lockOverlay.addSubview(lockIcon)
 
         NSLayoutConstraint.activate([
             cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
@@ -126,24 +140,21 @@ final class LevelMissionCell: UICollectionViewCell {
             statusBadge.heightAnchor.constraint(equalToConstant: 18),
             statusBadge.widthAnchor.constraint(greaterThanOrEqualToConstant: 52),
 
+            lockedInfoStack.leadingAnchor.constraint(equalTo: missionTag.leadingAnchor),
+            lockedInfoStack.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
+            lockedInfoStack.topAnchor.constraint(equalTo: numberLabel.bottomAnchor, constant: 4),
+
+            targetsChip.topAnchor.constraint(greaterThanOrEqualTo: lockedInfoStack.bottomAnchor, constant: 8),
             targetsChip.leadingAnchor.constraint(equalTo: missionTag.leadingAnchor),
             targetsChip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
             targetsChip.bottomAnchor.constraint(equalTo: fuelChip.topAnchor, constant: -6),
 
             fuelChip.leadingAnchor.constraint(equalTo: missionTag.leadingAnchor),
             fuelChip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
-            fuelChip.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12),
-
-            lockOverlay.topAnchor.constraint(equalTo: cardView.topAnchor),
-            lockOverlay.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
-            lockOverlay.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
-            lockOverlay.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
-
-            lockIcon.centerXAnchor.constraint(equalTo: lockOverlay.centerXAnchor),
-            lockIcon.centerYAnchor.constraint(equalTo: lockOverlay.centerYAnchor),
-            lockIcon.widthAnchor.constraint(equalToConstant: 28),
-            lockIcon.heightAnchor.constraint(equalToConstant: 28)
+            fuelChip.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12)
         ])
+
+        lockedInfoCollapsedHeight = lockedInfoStack.heightAnchor.constraint(equalToConstant: 0)
     }
 
     func configure(level: Int, isUnlocked: Bool, asteroids: Int, fuelSeconds: Int) {
@@ -156,65 +167,104 @@ final class LevelMissionCell: UICollectionViewCell {
         let isCompleted = isUnlocked && level < highest
         let isCurrent = isUnlocked && level == highest
 
-        lockOverlay.isHidden = isUnlocked
-        targetsChip.isHidden = !isUnlocked
-        fuelChip.isHidden = !isUnlocked
-        missionTag.isHidden = !isUnlocked
-        numberLabel.isHidden = !isUnlocked
-        statusBadge.isHidden = !isUnlocked
+        lockedInfoStack.isHidden = isUnlocked
+        lockedInfoCollapsedHeight?.isActive = isUnlocked
+
+        targetsChip.setMuted(!isUnlocked)
+        fuelChip.setMuted(!isUnlocked)
 
         cardView.layer.borderWidth = 1.5
 
         if !isUnlocked {
-            gradientLayer.colors = [
-                GameStyle.cockpitBlack.cgColor,
-                GameStyle.panelBlueDark.cgColor
-            ]
-            cardView.layer.borderColor = GameStyle.borderSteel.withAlphaComponent(0.35).cgColor
-            accentStripe.backgroundColor = GameStyle.borderSteel.withAlphaComponent(0.4)
-            glowLayer.backgroundColor = UIColor.clear.cgColor
-            glowLayer.opacity = 0
-            cardView.alpha = 0.72
+            applyLockedStyle(level: level, asteroids: asteroids, fuelPercent: fuelPercent)
             return
         }
 
         cardView.alpha = 1
+        numberLabel.textColor = GameStyle.textPrimary
 
         if isCurrent {
-            gradientLayer.colors = [
-                UIColor(red: 0.18, green: 0.08, blue: 0.10, alpha: 1).cgColor,
-                GameStyle.panelBlue.cgColor
-            ]
-            accentStripe.backgroundColor = GameStyle.accentRedBright
-            cardView.layer.borderColor = GameStyle.accentRedBright.withAlphaComponent(0.85).cgColor
-            glowLayer.backgroundColor = GameStyle.accentRed.withAlphaComponent(0.35).cgColor
-            glowLayer.opacity = 1
-            statusBadge.text = "  READY  "
-            statusBadge.textColor = GameStyle.textPrimary
-            statusBadge.backgroundColor = GameStyle.accentRed
+            applyCurrentStyle()
         } else if isCompleted {
-            gradientLayer.colors = [
-                UIColor(red: 0.06, green: 0.14, blue: 0.12, alpha: 1).cgColor,
-                GameStyle.panelBlue.cgColor
-            ]
-            accentStripe.backgroundColor = UIColor(red: 0.25, green: 0.72, blue: 0.55, alpha: 1)
-            cardView.layer.borderColor = UIColor(red: 0.25, green: 0.72, blue: 0.55, alpha: 0.5).cgColor
-            glowLayer.opacity = 0
-            statusBadge.text = "  CLEAR  "
-            statusBadge.textColor = GameStyle.cockpitBlack
-            statusBadge.backgroundColor = UIColor(red: 0.35, green: 0.85, blue: 0.62, alpha: 1)
+            applyCompletedStyle()
         } else {
-            gradientLayer.colors = [
-                GameStyle.deepNavy.cgColor,
-                GameStyle.panelBlue.cgColor
-            ]
-            accentStripe.backgroundColor = GameStyle.gaugeAmber
-            cardView.layer.borderColor = GameStyle.borderHighlight.cgColor
-            glowLayer.opacity = 0
-            statusBadge.text = "  OPEN  "
-            statusBadge.textColor = GameStyle.textPrimary
-            statusBadge.backgroundColor = GameStyle.panelBlueDark
+            applyOpenStyle()
         }
+    }
+
+    private func applyLockedStyle(level: Int, asteroids: Int, fuelPercent: Int) {
+        let previousMission = max(1, level - 1)
+        unlockRequirementLabel.text = "Complete Mission \(String(format: "%02d", previousMission))"
+        if level == 1 {
+            unlockRequirementLabel.text = "Available from the start"
+            unlockCaptionLabel.isHidden = true
+        }
+
+        statusBadge.isHidden = false
+        statusBadge.text = "  LOCKED  "
+        statusBadge.textColor = GameStyle.textSecondary
+        statusBadge.backgroundColor = GameStyle.cockpitBlack.withAlphaComponent(0.65)
+
+        numberLabel.textColor = GameStyle.textSecondary.withAlphaComponent(0.85)
+        missionTag.textColor = GameStyle.textSecondary
+
+        gradientLayer.colors = [
+            GameStyle.cockpitBlack.cgColor,
+            GameStyle.panelBlueDark.cgColor
+        ]
+        cardView.layer.borderColor = GameStyle.borderSteel.withAlphaComponent(0.45).cgColor
+        accentStripe.backgroundColor = GameStyle.borderSteel.withAlphaComponent(0.55)
+        glowLayer.opacity = 0
+        cardView.alpha = 0.94
+    }
+
+    private func applyCurrentStyle() {
+        missionTag.textColor = GameStyle.gaugeAmber
+        statusBadge.isHidden = false
+        statusBadge.text = "  READY  "
+        statusBadge.textColor = GameStyle.textPrimary
+        statusBadge.backgroundColor = GameStyle.accentRed
+
+        gradientLayer.colors = [
+            UIColor(red: 0.18, green: 0.08, blue: 0.10, alpha: 1).cgColor,
+            GameStyle.panelBlue.cgColor
+        ]
+        accentStripe.backgroundColor = GameStyle.accentRedBright
+        cardView.layer.borderColor = GameStyle.accentRedBright.withAlphaComponent(0.85).cgColor
+        glowLayer.backgroundColor = GameStyle.accentRed.withAlphaComponent(0.35).cgColor
+        glowLayer.opacity = 1
+    }
+
+    private func applyCompletedStyle() {
+        missionTag.textColor = GameStyle.gaugeAmber
+        statusBadge.isHidden = false
+        statusBadge.text = "  CLEAR  "
+        statusBadge.textColor = GameStyle.cockpitBlack
+        statusBadge.backgroundColor = UIColor(red: 0.35, green: 0.85, blue: 0.62, alpha: 1)
+
+        gradientLayer.colors = [
+            UIColor(red: 0.06, green: 0.14, blue: 0.12, alpha: 1).cgColor,
+            GameStyle.panelBlue.cgColor
+        ]
+        accentStripe.backgroundColor = UIColor(red: 0.25, green: 0.72, blue: 0.55, alpha: 1)
+        cardView.layer.borderColor = UIColor(red: 0.25, green: 0.72, blue: 0.55, alpha: 0.5).cgColor
+        glowLayer.opacity = 0
+    }
+
+    private func applyOpenStyle() {
+        missionTag.textColor = GameStyle.gaugeAmber
+        statusBadge.isHidden = false
+        statusBadge.text = "  OPEN  "
+        statusBadge.textColor = GameStyle.textPrimary
+        statusBadge.backgroundColor = GameStyle.panelBlueDark
+
+        gradientLayer.colors = [
+            GameStyle.deepNavy.cgColor,
+            GameStyle.panelBlue.cgColor
+        ]
+        accentStripe.backgroundColor = GameStyle.gaugeAmber
+        cardView.layer.borderColor = GameStyle.borderHighlight.cgColor
+        glowLayer.opacity = 0
     }
 
     func applyCarouselPresentation(scale: CGFloat, alpha: CGFloat) {
@@ -275,5 +325,11 @@ private final class MissionStatChipView: UIView {
 
     func setValue(_ value: String) {
         valueLabel.text = value
+    }
+
+    func setMuted(_ muted: Bool) {
+        alpha = muted ? 0.82 : 1
+        valueLabel.textColor = muted ? GameStyle.textSecondary : GameStyle.textPrimary
+        iconView.tintColor = muted ? GameStyle.textSecondary : GameStyle.gaugeAmber
     }
 }

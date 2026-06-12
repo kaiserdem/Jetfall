@@ -162,9 +162,13 @@ final class LevelSelectViewController: UIViewController {
         missionHintLabel.translatesAutoresizingMaskIntoConstraints = false
         GameStyle.styleSubtitleLabel(missionHintLabel, size: 14)
         missionHintLabel.textAlignment = .center
+        missionHintLabel.numberOfLines = 2
+        missionHintLabel.lineBreakMode = .byWordWrapping
+        missionHintLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        missionHintLabel.setContentHuggingPriority(.required, for: .vertical)
 
         launchButton.translatesAutoresizingMaskIntoConstraints = false
-        GameStyle.applyPrimaryButton(launchButton, title: "Launch Mission")
+        GameStyle.applyMissionLaunchButton(launchButton, title: "Launch Mission", style: .active)
         launchButton.addTarget(self, action: #selector(launchFocusedLevel), for: .touchUpInside)
 
         footerPanel.addSubview(missionCounterLabel)
@@ -176,11 +180,11 @@ final class LevelSelectViewController: UIViewController {
             missionCounterLabel.leadingAnchor.constraint(equalTo: footerPanel.leadingAnchor, constant: 16),
             missionCounterLabel.trailingAnchor.constraint(equalTo: footerPanel.trailingAnchor, constant: -16),
 
-            missionHintLabel.topAnchor.constraint(equalTo: missionCounterLabel.bottomAnchor, constant: 4),
+            missionHintLabel.topAnchor.constraint(equalTo: missionCounterLabel.bottomAnchor, constant: 8),
             missionHintLabel.leadingAnchor.constraint(equalTo: missionCounterLabel.leadingAnchor),
             missionHintLabel.trailingAnchor.constraint(equalTo: missionCounterLabel.trailingAnchor),
 
-            launchButton.topAnchor.constraint(equalTo: missionHintLabel.bottomAnchor, constant: 14),
+            launchButton.topAnchor.constraint(equalTo: missionHintLabel.bottomAnchor, constant: 16),
             launchButton.leadingAnchor.constraint(equalTo: footerPanel.leadingAnchor, constant: 16),
             launchButton.trailingAnchor.constraint(equalTo: footerPanel.trailingAnchor, constant: -16),
             launchButton.bottomAnchor.constraint(equalTo: footerPanel.bottomAnchor, constant: -14)
@@ -314,6 +318,10 @@ final class LevelSelectViewController: UIViewController {
         )
     }
 
+    private func missionHint(stats: String, status: String) -> String {
+        "\(stats)\n\(status)"
+    }
+
     private func reportFocusedLevel(_ level: Int) {
         guard level != focusedLevel else { return }
 
@@ -343,17 +351,17 @@ final class LevelSelectViewController: UIViewController {
         missionCounterLabel.text = "MISSION \(String(format: "%02d", focusedLevel)) / \(levels.count)"
 
         if !isUnlocked {
-            missionHintLabel.text = "\(missionStats) — complete previous missions to unlock"
+            missionHintLabel.text = missionHint(stats: missionStats, status: "Complete previous missions to unlock")
             GameStyle.applySecondaryButton(launchButton, title: "Locked")
             launchButton.isEnabled = false
             launchButton.alpha = 0.45
         } else if isCurrent {
-            missionHintLabel.text = "\(missionStats) — ready for launch"
+            missionHintLabel.text = missionHint(stats: missionStats, status: "Ready for launch")
             GameStyle.applyPrimaryButton(launchButton, title: "Launch Mission")
             launchButton.isEnabled = true
             launchButton.alpha = 1
         } else if isCompleted {
-            missionHintLabel.text = "\(missionStats) — sector cleared, replay anytime"
+            missionHintLabel.text = missionHint(stats: missionStats, status: "Sector cleared — replay anytime")
             GameStyle.applyPrimaryButton(launchButton, title: "Replay Mission")
             launchButton.isEnabled = true
             launchButton.alpha = 1

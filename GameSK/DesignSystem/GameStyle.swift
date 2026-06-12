@@ -59,6 +59,36 @@ enum GameStyle {
         button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 22, bottom: 12, right: 22)
     }
 
+    static let missionLaunchButtonHeight: CGFloat = 52
+
+    enum MissionLaunchButtonStyle {
+        case active
+        case locked
+    }
+
+    static func applyMissionLaunchButton(
+        _ button: UIButton,
+        title: String,
+        style: MissionLaunchButtonStyle
+    ) {
+        button.setTitle(title, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 20, weight: .bold)
+        button.layer.cornerRadius = 10
+        button.layer.borderWidth = 2
+        button.contentEdgeInsets = UIEdgeInsets(top: 14, left: 28, bottom: 14, right: 28)
+
+        switch style {
+        case .active:
+            button.tintColor = textPrimary
+            button.backgroundColor = accentRedDim
+            button.layer.borderColor = borderHighlight.cgColor
+        case .locked:
+            button.tintColor = textSecondary
+            button.backgroundColor = panelBlue
+            button.layer.borderColor = borderSteel.cgColor
+        }
+    }
+
     static func styleControlButton(_ button: UIButton, cornerRadius: CGFloat) {
         button.tintColor = textPrimary
         button.backgroundColor = panelBlueDark
