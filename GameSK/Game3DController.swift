@@ -76,8 +76,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         setupCamera()
         Plane3DFactory.addLights(to: scene.rootNode)
 
-        for _ in 0..<8 {
-            spawnAsteroid()
+        for distance in AsteroidFactory.initialSpawnDistances() {
+            spawnAsteroid(preferredDistance: distance)
         }
     }
 
@@ -85,7 +85,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         let camera = SCNCamera()
         camera.fieldOfView = 58
         camera.zNear = 0.1
-        camera.zFar = 200
+        camera.zFar = 420
         cameraNode.camera = camera
         cameraNode.name = "chaseCamera"
         scene.rootNode.addChildNode(cameraNode)
@@ -144,7 +144,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         asteroidSpawnTimer += TimeInterval(delta)
         fireTimer += TimeInterval(delta)
 
-        if asteroidSpawnTimer >= 1.4 {
+        if asteroidSpawnTimer >= 1.8 {
             asteroidSpawnTimer = 0
             spawnAsteroid()
         }
@@ -203,10 +203,15 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
     // MARK: - Spawning
 
-    private func spawnAsteroid() {
+    private func spawnAsteroid(preferredDistance: Float? = nil) {
         guard let asteroid = AsteroidFactory.makeAsteroid() else { return }
 
-        asteroid.position = AsteroidFactory.randomSpawnPosition(near: playerRoot.position)
+        let existingAsteroids = worldNode.childNodes.filter { $0.name == "enemy" }
+        asteroid.position = AsteroidFactory.spawnPosition(
+            near: playerRoot.position,
+            preferredDistance: preferredDistance,
+            avoiding: existingAsteroids
+        )
         asteroid.eulerAngles = SCNVector3(
             Float.random(in: 0...(Float.pi * 2)),
             Float.random(in: 0...(Float.pi * 2)),

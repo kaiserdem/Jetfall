@@ -16,12 +16,53 @@ enum AsteroidFactory {
         return asteroid
     }
 
-    static func randomSpawnPosition(near playerPosition: SCNVector3) -> SCNVector3 {
-        SCNVector3(
-            playerPosition.x + Float.random(in: -11...11),
-            playerPosition.y + Float.random(in: -3...7),
-            playerPosition.z + Float.random(in: 55...80)
+    private static let minSpawnDistance: Float = 150
+    private static let maxSpawnDistance: Float = 340
+
+    static func spawnPosition(
+        near playerPosition: SCNVector3,
+        preferredDistance: Float? = nil,
+        avoiding otherAsteroids: [SCNNode] = []
+    ) -> SCNVector3 {
+        for _ in 0..<16 {
+            let distance = preferredDistance ?? Float.random(in: minSpawnDistance...maxSpawnDistance)
+            let candidate = SCNVector3(
+                playerPosition.x + Float.random(in: -14...14),
+                playerPosition.y + Float.random(in: -5...8),
+                playerPosition.z + distance
+            )
+
+            if isSeparated(from: otherAsteroids, candidate: candidate) {
+                return candidate
+            }
+        }
+
+        let fallbackDistance = preferredDistance ?? Float.random(in: minSpawnDistance...maxSpawnDistance)
+        return SCNVector3(
+            playerPosition.x + Float.random(in: -14...14),
+            playerPosition.y + Float.random(in: -5...8),
+            playerPosition.z + fallbackDistance
         )
+    }
+
+    static func initialSpawnDistances() -> [Float] {
+        [170, 230, 290]
+    }
+
+    private static func isSeparated(from asteroids: [SCNNode], candidate: SCNVector3) -> Bool {
+        for asteroid in asteroids {
+            let delta = SCNVector3(
+                candidate.x - asteroid.position.x,
+                candidate.y - asteroid.position.y,
+                candidate.z - asteroid.position.z
+            )
+            let horizontalDistance = hypot(delta.x, delta.y)
+            let depthDistance = abs(delta.z)
+            if horizontalDistance < 9, depthDistance < 45 {
+                return false
+            }
+        }
+        return true
     }
 
     private static func loadTemplate() -> SCNNode? {

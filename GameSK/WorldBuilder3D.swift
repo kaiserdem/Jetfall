@@ -25,8 +25,8 @@ enum WorldBuilder3D {
         scene.background.wrapS = .repeat
         scene.background.wrapT = .repeat
         scene.fogColor = spaceColor
-        scene.fogStartDistance = 80
-        scene.fogEndDistance = 200
+        scene.fogStartDistance = 120
+        scene.fogEndDistance = 360
         scene.fogDensityExponent = 0.9
     }
 
