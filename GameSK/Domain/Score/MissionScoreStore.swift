@@ -24,6 +24,22 @@ enum MissionScoreStore {
         return SaveOutcome(bestScore: safeScore, isNewBest: true)
     }
 
+    static func careerBest() -> (score: Int, level: Int)? {
+        var topScore = 0
+        var topLevel = 0
+
+        for level in 1...LevelProgressStore.highestUnlockedLevel {
+            let score = bestScore(for: level)
+            if score > topScore {
+                topScore = score
+                topLevel = level
+            }
+        }
+
+        guard topScore > 0 else { return nil }
+        return (topScore, topLevel)
+    }
+
     static func resetAll() {
         for level in 1...LevelConfigFactory.totalLevels {
             UserDefaults.standard.removeObject(forKey: key(for: level))

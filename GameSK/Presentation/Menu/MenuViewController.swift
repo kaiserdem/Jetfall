@@ -3,70 +3,78 @@ import UIKit
 final class MenuViewController: UIViewController {
 
     private var starfieldView: StarfieldBackgroundView?
-    private let titleLabel = UILabel()
-    private let missionsButton = UIButton(type: .system)
+    private let contentStack = UIStackView()
+    private let dashboardPanel = MenuDashboardPanel()
+    private let aircraftPreview = MenuAircraftPreviewView()
+    private let continueButton = UIButton(type: .system)
     private let shopButton = UIButton(type: .system)
     private let activityIndicator = UIActivityIndicatorView(style: .medium)
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = GameStyle.cockpitBlack
-        setupTitle()
-        setupMissionsButton()
-        setupShopButton()
+        setupContentStack()
+        setupButtons()
         setupActivityIndicator()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshDashboard()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         GameAssetLoader.shared.beginPreloadingIfNeeded()
         GameAssetLoader.shared.whenReady { [weak self] in
+            Plane3DFactory.prepareFlightPlane()
             self?.showStarfieldIfNeeded()
-            self?.updateMissionsButtonState()
+            self?.aircraftPreview.startAnimating()
+            self?.updateContinueButtonState()
         }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         starfieldView?.stopAnimating()
+        aircraftPreview.stopAnimating()
     }
 
     override var prefersStatusBarHidden: Bool {
         true
     }
 
-    private func setupTitle() {
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        GameStyle.styleTitleLabel(titleLabel, text: "GameSK")
-        view.addSubview(titleLabel)
+    private func setupContentStack() {
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.axis = .vertical
+        contentStack.spacing = 16
+        contentStack.alignment = .fill
+
+        contentStack.addArrangedSubview(dashboardPanel)
+        contentStack.addArrangedSubview(aircraftPreview)
+
+        view.addSubview(contentStack)
+
         NSLayoutConstraint.activate([
-            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -72)
+            contentStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            contentStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            contentStack.centerYAnchor.constraint(equalTo: view.centerYAnchor)
         ])
     }
 
-    private func setupMissionsButton() {
-        missionsButton.translatesAutoresizingMaskIntoConstraints = false
-        GameStyle.applyPrimaryButton(missionsButton, title: "Missions")
-        missionsButton.addTarget(self, action: #selector(missionsTapped), for: .touchUpInside)
-        view.addSubview(missionsButton)
-        NSLayoutConstraint.activate([
-            missionsButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            missionsButton.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 36)
-        ])
-    }
+    private func setupButtons() {
+        continueButton.translatesAutoresizingMaskIntoConstraints = false
+        GameStyle.applyPrimaryButton(continueButton, title: "Continue Mission")
+        continueButton.addTarget(self, action: #selector(continueTapped), for: .touchUpInside)
 
-    private func setupShopButton() {
         shopButton.translatesAutoresizingMaskIntoConstraints = false
         GameStyle.applySecondaryButton(shopButton, title: "Hangar Shop")
         shopButton.addTarget(self, action: #selector(shopTapped), for: .touchUpInside)
-        view.addSubview(shopButton)
-        NSLayoutConstraint.activate([
-            shopButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            shopButton.topAnchor.constraint(equalTo: missionsButton.bottomAnchor, constant: 14),
-            shopButton.leadingAnchor.constraint(equalTo: missionsButton.leadingAnchor),
-            shopButton.trailingAnchor.constraint(equalTo: missionsButton.trailingAnchor)
-        ])
+
+        contentStack.addArrangedSubview(continueButton)
+        contentStack.addArrangedSubview(shopButton)
+
+        contentStack.setCustomSpacing(20, after: aircraftPreview)
     }
 
     private func setupActivityIndicator() {
@@ -75,15 +83,19 @@ final class MenuViewController: UIViewController {
         activityIndicator.hidesWhenStopped = true
         view.addSubview(activityIndicator)
         NSLayoutConstraint.activate([
-            activityIndicator.centerXAnchor.constraint(equalTo: missionsButton.centerXAnchor),
-            activityIndicator.centerYAnchor.constraint(equalTo: missionsButton.centerYAnchor)
+            activityIndicator.centerXAnchor.constraint(equalTo: continueButton.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: continueButton.centerYAnchor)
         ])
+    }
+
+    private func refreshDashboard() {
+        dashboardPanel.update(with: .current())
     }
 
     private func showStarfieldIfNeeded() {
         guard starfieldView == nil else { return }
 
-        let starfield = StarfieldBackgroundView()
+        let starfield = StarfieldBackgroundView(style: .menu)
         starfield.translatesAutoresizingMaskIntoConstraints = false
         starfield.alpha = 0
         view.insertSubview(starfield, at: 0)
@@ -101,10 +113,10 @@ final class MenuViewController: UIViewController {
         }
     }
 
-    private func updateMissionsButtonState() {
-        missionsButton.isEnabled = true
+    private func updateContinueButtonState() {
+        continueButton.isEnabled = true
         activityIndicator.stopAnimating()
-        missionsButton.setTitle("Missions", for: .normal)
+        continueButton.setTitle("Continue Mission", for: .normal)
     }
 
     @objc private func shopTapped() {
@@ -120,9 +132,9 @@ final class MenuViewController: UIViewController {
         present(shop, animated: true)
     }
 
-    @objc private func missionsTapped() {
-        missionsButton.isEnabled = false
-        missionsButton.setTitle("", for: .normal)
+    @objc private func continueTapped() {
+        continueButton.isEnabled = false
+        continueButton.setTitle("", for: .normal)
         activityIndicator.startAnimating()
 
         GameAssetLoader.shared.whenReady { [weak self] in
@@ -134,14 +146,14 @@ final class MenuViewController: UIViewController {
         guard let levelSelect = storyboard?.instantiateViewController(
             withIdentifier: "LevelSelectViewController"
         ) else {
-            updateMissionsButtonState()
+            updateContinueButtonState()
             return
         }
 
         levelSelect.modalPresentationStyle = .fullScreen
         levelSelect.modalTransitionStyle = .crossDissolve
         present(levelSelect, animated: true) { [weak self] in
-            self?.updateMissionsButtonState()
+            self?.updateContinueButtonState()
         }
     }
 }

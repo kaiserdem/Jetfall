@@ -536,7 +536,7 @@ final class HangarShopViewController: UIViewController {
     private func showStarfieldIfNeeded() {
         guard starfieldView == nil else { return }
 
-        let starfield = StarfieldBackgroundView()
+        let starfield = StarfieldBackgroundView(style: .hangarShop)
         starfield.translatesAutoresizingMaskIntoConstraints = false
         starfield.alpha = 0
         view.insertSubview(starfield, at: 0)
