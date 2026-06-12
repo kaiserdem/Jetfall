@@ -11,8 +11,6 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private let propellerNode: SCNNode
     private let cameraNode = SCNNode()
     private let worldNode = SCNNode()
-    private var starsTime: Float = 0
-
     private var activeDirections = Set<MoveDirection>()
     private var isFiring = false
     private var score = 0
@@ -57,6 +55,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     // MARK: - Setup
 
     private func setupScene() {
+        WorldBuilder3D.resetStarMotion()
         WorldBuilder3D.configureEnvironment(for: scene)
         scene.physicsWorld.gravity = SCNVector3Zero
         scene.physicsWorld.contactDelegate = self
@@ -105,11 +104,10 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             localFront: SCNVector3(0, 0, -1)
         )
 
-        starsTime += delta
         WorldBuilder3D.updateStars(
             for: scene,
             playerPosition: playerRoot.position,
-            time: starsTime
+            delta: delta
         )
     }
 

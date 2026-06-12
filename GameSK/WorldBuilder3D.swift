@@ -6,6 +6,19 @@ enum WorldBuilder3D {
     static let spaceColor = UIColor(red: 0.02, green: 0.04, blue: 0.14, alpha: 1)
 
     private static var starsImage: UIImage?
+    private static var starOffsetX: Float = 0
+    private static var starOffsetY: Float = 0
+    private static var lastPlayerX: Float = 0
+    private static var lastPlayerY: Float = 0
+    private static var tracksPlayer = false
+
+    static func resetStarMotion() {
+        starOffsetX = 0
+        starOffsetY = 0
+        lastPlayerX = 0
+        lastPlayerY = 0
+        tracksPlayer = false
+    }
 
     static func configureEnvironment(for scene: SCNScene) {
         scene.background.contents = starsTexture()
@@ -20,20 +33,25 @@ enum WorldBuilder3D {
     static func updateStars(
         for scene: SCNScene,
         playerPosition: SCNVector3,
-        time: Float
+        delta: Float
     ) {
-        let shiftX = wrappedOffset(
-            Float(-playerPosition.x) * 0.006 + sin(time * 0.04) * 0.012
-        )
-        let shiftY = wrappedOffset(
-            Float(-playerPosition.y) * 0.006 + cos(time * 0.035) * 0.01
-        )
+        if !tracksPlayer {
+            lastPlayerX = playerPosition.x
+            lastPlayerY = playerPosition.y
+            tracksPlayer = true
+        }
 
-        scene.background.contentsTransform = SCNMatrix4MakeTranslation(shiftX, shiftY, 0)
-    }
+        let playerDeltaX = playerPosition.x - lastPlayerX
+        let playerDeltaY = playerPosition.y - lastPlayerY
+        lastPlayerX = playerPosition.x
+        lastPlayerY = playerPosition.y
 
-    private static func wrappedOffset(_ value: Float) -> Float {
-        value - floor(value)
+        starOffsetX += -playerDeltaX * 0.007
+        starOffsetY += -playerDeltaY * 0.007
+        starOffsetX += delta * 0.0035
+        starOffsetY += delta * 0.0028
+
+        scene.background.contentsTransform = SCNMatrix4MakeTranslation(starOffsetX, starOffsetY, 0)
     }
 
     private static func starsTexture() -> UIImage {
