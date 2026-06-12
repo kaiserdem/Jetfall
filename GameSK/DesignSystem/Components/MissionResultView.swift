@@ -3,9 +3,9 @@ import UIKit
 final class MissionResultView: UIView {
 
     enum Result {
-        case levelComplete(level: Int, score: Int, hasNextLevel: Bool)
-        case gameOver(level: Int, score: Int, outOfFuel: Bool)
-        case campaignVictory(score: Int)
+        case levelComplete(level: Int, result: MissionScoreResult, hasNextLevel: Bool)
+        case gameOver(level: Int, killPoints: Int, outOfFuel: Bool)
+        case campaignVictory(result: MissionScoreResult)
     }
 
     var onPrimaryAction: (() -> Void)?
@@ -213,13 +213,15 @@ final class MissionResultView: UIView {
     }
 
     private func configure(for result: Result) {
+        scoreTitleLabel.text = "SCORE"
+
         switch result {
-        case let .levelComplete(level, score, hasNextLevel):
+        case let .levelComplete(level, result, hasNextLevel):
             applySuccessTheme()
             iconView.image = UIImage(systemName: "checkmark.seal.fill")
             titleLabel.text = "MISSION COMPLETE"
-            subtitleLabel.text = "Sector \(String(format: "%02d", level)) cleared"
-            scoreValueLabel.text = "\(score)"
+            subtitleLabel.text = levelCompleteSubtitle(level: level, result: result)
+            scoreValueLabel.text = "\(result.total)"
             if hasNextLevel {
                 GameStyle.applyPrimaryButton(primaryButton, title: "Next Mission")
                 secondaryButton.isHidden = false
@@ -228,7 +230,7 @@ final class MissionResultView: UIView {
                 secondaryButton.isHidden = true
             }
 
-        case let .gameOver(level, score, outOfFuel):
+        case let .gameOver(level, killPoints, outOfFuel):
             applyFailureTheme()
             iconView.image = UIImage(
                 systemName: outOfFuel ? "fuelpump.fill" : "exclamationmark.triangle.fill"
@@ -237,19 +239,34 @@ final class MissionResultView: UIView {
             subtitleLabel.text = outOfFuel
                 ? "Tank empty in sector \(String(format: "%02d", level))"
                 : "Hull destroyed in sector \(String(format: "%02d", level))"
-            scoreValueLabel.text = "\(score)"
+            scoreValueLabel.text = "\(killPoints)"
+            scoreTitleLabel.text = killPoints > 0 ? "KILLS SCORE" : "SCORE"
             GameStyle.applyPrimaryButton(primaryButton, title: "Try Again")
             secondaryButton.isHidden = false
 
-        case let .campaignVictory(score):
+        case let .campaignVictory(result):
             applyVictoryTheme()
             iconView.image = UIImage(systemName: "trophy.fill")
             titleLabel.text = "ALL MISSIONS\nCOMPLETE!"
             subtitleLabel.text = "You conquered all 100 sectors"
-            scoreValueLabel.text = "\(score)"
+            scoreValueLabel.text = "\(result.total)"
             GameStyle.applyPrimaryButton(primaryButton, title: "Return to Missions")
             secondaryButton.isHidden = true
         }
+    }
+
+    private func levelCompleteSubtitle(level: Int, result: MissionScoreResult) -> String {
+        var lines = [
+            "Sector \(String(format: "%02d", level)) cleared",
+            "Kills \(result.killPoints) · Fuel +\(result.fuelBonus)",
+            "+\(result.total) hangar credits"
+        ]
+        if result.isNewBest {
+            lines.append("New best score!")
+        } else if result.bestScore > 0 {
+            lines.append("Best \(result.bestScore)")
+        }
+        return lines.joined(separator: "\n")
     }
 
     private func applySuccessTheme() {

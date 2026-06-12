@@ -29,6 +29,7 @@ final class LevelSelectViewController: UIViewController {
     private let progressFill = UIView()
     private var progressFillWidth: NSLayoutConstraint?
     private let backButton = AviatorNavButton(style: .labeled(symbol: "chevron.left", title: "Hangar"))
+    private let creditsBadge = HangarCreditsBadge()
     private var collectionView: UICollectionView!
 
     private let pagerBar = MissionPagerBar()
@@ -64,6 +65,7 @@ final class LevelSelectViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         updateProgress()
+        updateCreditsBadge()
         collectionView.reloadData()
         didPerformInitialScroll = false
     }
@@ -187,6 +189,7 @@ final class LevelSelectViewController: UIViewController {
             launchButton.topAnchor.constraint(equalTo: missionHintLabel.bottomAnchor, constant: 16),
             launchButton.leadingAnchor.constraint(equalTo: footerPanel.leadingAnchor, constant: 16),
             launchButton.trailingAnchor.constraint(equalTo: footerPanel.trailingAnchor, constant: -16),
+            launchButton.heightAnchor.constraint(equalToConstant: GameStyle.missionLaunchButtonHeight),
             launchButton.bottomAnchor.constraint(equalTo: footerPanel.bottomAnchor, constant: -14)
         ])
     }
@@ -218,11 +221,26 @@ final class LevelSelectViewController: UIViewController {
         topBar.translatesAutoresizingMaskIntoConstraints = false
         backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
         topBar.addSubview(backButton)
+        topBar.addSubview(creditsBadge)
 
         NSLayoutConstraint.activate([
+            topBar.heightAnchor.constraint(equalToConstant: 40),
+
             backButton.topAnchor.constraint(equalTo: topBar.topAnchor),
             backButton.leadingAnchor.constraint(equalTo: topBar.leadingAnchor),
-            backButton.bottomAnchor.constraint(equalTo: topBar.bottomAnchor)
+            backButton.bottomAnchor.constraint(equalTo: topBar.bottomAnchor),
+
+            creditsBadge.topAnchor.constraint(equalTo: topBar.topAnchor),
+            creditsBadge.trailingAnchor.constraint(equalTo: topBar.trailingAnchor),
+            creditsBadge.bottomAnchor.constraint(equalTo: topBar.bottomAnchor),
+            creditsBadge.leadingAnchor.constraint(
+                greaterThanOrEqualTo: backButton.trailingAnchor,
+                constant: 8
+            ),
+            creditsBadge.widthAnchor.constraint(
+                lessThanOrEqualTo: topBar.widthAnchor,
+                multiplier: 0.42
+            )
         ])
 
         contentStack.translatesAutoresizingMaskIntoConstraints = false
@@ -298,6 +316,10 @@ final class LevelSelectViewController: UIViewController {
         }
     }
 
+    private func updateCreditsBadge() {
+        creditsBadge.update(balance: PlayerWallet.balance)
+    }
+
     private func updateProgress() {
         let unlocked = LevelProgressStore.highestUnlockedLevel
         let total = LevelConfigFactory.totalLevels
@@ -320,6 +342,11 @@ final class LevelSelectViewController: UIViewController {
 
     private func missionHint(stats: String, status: String) -> String {
         "\(stats)\n\(status)"
+    }
+
+    private func statusWithBestScore(_ status: String, bestScoreNote: String?) -> String {
+        guard let bestScoreNote else { return status }
+        return "\(status) · \(bestScoreNote)"
     }
 
     private func reportFocusedLevel(_ level: Int) {
@@ -347,27 +374,38 @@ final class LevelSelectViewController: UIViewController {
         let isCompleted = isUnlocked && focusedLevel < highest
         let isCurrent = isUnlocked && focusedLevel == highest
         let missionStats = "Targets: \(config.asteroidsToDestroy) · Fuel: \(Int(config.fuelDuration))s"
+        let bestScore = MissionScoreStore.bestScore(for: focusedLevel)
+        let bestScoreNote = bestScore > 0 ? "Best score \(bestScore)" : nil
 
-        missionCounterLabel.text = "MISSION \(String(format: "%02d", focusedLevel)) / \(levels.count)"
+        missionCounterLabel.text = "MISSION"
 
         if !isUnlocked {
-            missionHintLabel.text = missionHint(stats: missionStats, status: "Complete previous missions to unlock")
-            GameStyle.applySecondaryButton(launchButton, title: "Locked")
+            missionHintLabel.text = missionHint(
+                stats: missionStats,
+                status: "Complete previous missions to unlock"
+            )
+            GameStyle.applyMissionLaunchButton(launchButton, title: "Locked", style: .locked)
             launchButton.isEnabled = false
             launchButton.alpha = 0.45
         } else if isCurrent {
-            missionHintLabel.text = missionHint(stats: missionStats, status: "Ready for launch")
-            GameStyle.applyPrimaryButton(launchButton, title: "Launch Mission")
+            missionHintLabel.text = missionHint(
+                stats: missionStats,
+                status: statusWithBestScore("Ready for launch", bestScoreNote: bestScoreNote)
+            )
+            GameStyle.applyMissionLaunchButton(launchButton, title: "Launch Mission", style: .active)
             launchButton.isEnabled = true
             launchButton.alpha = 1
         } else if isCompleted {
-            missionHintLabel.text = missionHint(stats: missionStats, status: "Sector cleared — replay anytime")
-            GameStyle.applyPrimaryButton(launchButton, title: "Replay Mission")
+            missionHintLabel.text = missionHint(
+                stats: missionStats,
+                status: statusWithBestScore("Sector cleared — replay anytime", bestScoreNote: bestScoreNote)
+            )
+            GameStyle.applyMissionLaunchButton(launchButton, title: "Replay Mission", style: .active)
             launchButton.isEnabled = true
             launchButton.alpha = 1
         } else {
             missionHintLabel.text = missionStats
-            GameStyle.applyPrimaryButton(launchButton, title: "Launch Mission")
+            GameStyle.applyMissionLaunchButton(launchButton, title: "Launch Mission", style: .active)
             launchButton.isEnabled = true
             launchButton.alpha = 1
         }

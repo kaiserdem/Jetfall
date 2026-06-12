@@ -133,14 +133,16 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             }
         }
 
-        gameController.onLevelComplete = { [weak self] level, hasNextLevel in
+        gameController.onLevelComplete = { [weak self] level, hasNextLevel, result in
             DispatchQueue.main.async {
                 guard let self else { return }
                 LevelProgressStore.unlockNext(after: level)
+                PlayerWallet.addCredits(result.total)
+                self.currentScore = result.total
                 self.presentMissionResult(
                     .levelComplete(
                         level: level,
-                        score: self.currentScore,
+                        result: result,
                         hasNextLevel: hasNextLevel
                     )
                 )
@@ -150,20 +152,23 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         gameController.onGameOver = { [weak self] level, outOfFuel in
             DispatchQueue.main.async {
                 guard let self else { return }
+                let killPoints = self.gameController.missionKillPoints
+                self.currentScore = killPoints
                 self.presentMissionResult(
                     .gameOver(
                         level: level,
-                        score: self.currentScore,
+                        killPoints: killPoints,
                         outOfFuel: outOfFuel
                     )
                 )
             }
         }
 
-        gameController.onVictory = { [weak self] in
+        gameController.onVictory = { [weak self] result in
             DispatchQueue.main.async {
                 guard let self else { return }
-                self.presentMissionResult(.campaignVictory(score: self.currentScore))
+                self.currentScore = result.total
+                self.presentMissionResult(.campaignVictory(result: result))
             }
         }
 

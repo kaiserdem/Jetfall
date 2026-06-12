@@ -13,7 +13,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private let worldNode = SCNNode()
     private var activeDirections = Set<MoveDirection>()
     private var isFiring = false
-    private var score = 0
+    private var missionScoreTracker = MissionScoreTracker(level: 1)
+    private var lastMissionScoreResult: MissionScoreResult?
     private var isGameOver = false
     private var isLevelComplete = false
     private(set) var isPaused = false
@@ -43,12 +44,16 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     var onScoreChange: ((Int) -> Void)?
     var onLevelProgress: ((Int, Int, Int) -> Void)?
     var onFuelChange: ((TimeInterval, TimeInterval) -> Void)?
-    var onLevelComplete: ((Int, Bool) -> Void)?
+    var onLevelComplete: ((Int, Bool, MissionScoreResult) -> Void)?
     var onGameOver: ((Int, Bool) -> Void)?
-    var onVictory: (() -> Void)?
+    var onVictory: ((MissionScoreResult) -> Void)?
 
     var currentLevelNumber: Int {
         currentLevel
+    }
+
+    var missionKillPoints: Int {
+        missionScoreTracker.killPoints
     }
 
     init(scnView: SCNView, startingLevel: Int = 1) {
@@ -117,7 +122,9 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         guard isLevelComplete else { return }
 
         if currentLevel >= LevelConfigFactory.totalLevels {
-            onVictory?()
+            if let lastMissionScoreResult {
+                onVictory?(lastMissionScoreResult)
+            }
             return
         }
 
@@ -129,8 +136,6 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     }
 
     func restartCampaign() {
-        score = 0
-        onScoreChange?(score)
         beginLevel(1)
     }
 
@@ -173,6 +178,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         bankNode.rotation = SCNVector4Zero
 
         fuelRemaining = levelConfig.fuelDuration
+        missionScoreTracker = MissionScoreTracker(level: currentLevel)
+        onScoreChange?(0)
         onFuelChange?(fuelRemaining, levelConfig.fuelDuration)
 
         clearEnemies()
@@ -207,8 +214,17 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         isLevelComplete = true
         isFiring = false
         activeDirections = []
+
+        let result = missionScoreTracker.finalize(
+            fuelRemaining: fuelRemaining,
+            fuelTotal: levelConfig.fuelDuration,
+            level: currentLevel
+        )
+        lastMissionScoreResult = result
+        onScoreChange?(result.total)
+
         let hasNextLevel = currentLevel < LevelConfigFactory.totalLevels
-        onLevelComplete?(currentLevel, hasNextLevel)
+        onLevelComplete?(currentLevel, hasNextLevel, result)
     }
 
     // MARK: - Camera
@@ -451,8 +467,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private func handleBulletHit(enemy: SCNNode) {
         addExplosion(at: enemy.presentation.worldPosition)
         enemy.removeFromParentNode()
-        score += 10
-        onScoreChange?(score)
+        missionScoreTracker.recordKill()
+        onScoreChange?(missionScoreTracker.displayedScore)
         registerKill()
     }
 
