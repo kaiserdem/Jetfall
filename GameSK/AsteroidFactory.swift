@@ -16,11 +16,11 @@ enum AsteroidFactory {
         return asteroid
     }
 
-    static func randomSpawnPosition() -> SCNVector3 {
+    static func randomSpawnPosition(near playerPosition: SCNVector3) -> SCNVector3 {
         SCNVector3(
-            Float.random(in: -11...11),
-            Float.random(in: -3...7),
-            Float.random(in: 55...80)
+            playerPosition.x + Float.random(in: -11...11),
+            playerPosition.y + Float.random(in: -3...7),
+            playerPosition.z + Float.random(in: 55...80)
         )
     }
 

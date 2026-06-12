@@ -6,12 +6,19 @@ protocol VirtualDPadDelegate: AnyObject {
 
 final class VirtualDPadView: UIView {
 
+    enum HorizontalAlignment {
+        case left
+        case right
+    }
+
     weak var delegate: VirtualDPadDelegate?
+
+    var horizontalAlignment: HorizontalAlignment = .right
 
     private var activeDirections = Set<MoveDirection>()
     private var touchMap = [UITouch: MoveDirection]()
     private let buttonSize: CGFloat = 58
-    private let spacing: CGFloat = 64
+    private let spacing: CGFloat = 48
 
     private lazy var buttons: [MoveDirection: UIButton] = {
         var map = [MoveDirection: UIButton]()
@@ -45,7 +52,9 @@ final class VirtualDPadView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        let center = CGPoint(x: buttonSize + spacing * 0.5, y: bounds.height - buttonSize - spacing * 0.5)
+        let inset = buttonSize + spacing * 0.5
+        let centerX = horizontalAlignment == .right ? bounds.width - inset : inset
+        let center = CGPoint(x: centerX, y: bounds.height - buttonSize - spacing * 0.5)
         let offsets: [MoveDirection: CGPoint] = [
             .up: CGPoint(x: 0, y: spacing),
             .down: CGPoint(x: 0, y: -spacing),

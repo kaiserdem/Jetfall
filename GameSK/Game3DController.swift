@@ -11,8 +11,10 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private let propellerNode: SCNNode
     private let cameraNode = SCNNode()
     private let worldNode = SCNNode()
+    private var starsTime: Float = 0
 
     private var activeDirections = Set<MoveDirection>()
+    private var isFiring = false
     private var score = 0
     private var isGameOver = false
     private var lastUpdateTime: TimeInterval = 0
@@ -49,7 +51,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         scnView.isPlaying = true
         scnView.loops = true
         scnView.antialiasingMode = .multisampling4X
-        scnView.backgroundColor = UIColor(red: 0.45, green: 0.72, blue: 0.95, alpha: 1)
+        scnView.backgroundColor = WorldBuilder3D.spaceColor
     }
 
     // MARK: - Setup
@@ -88,10 +90,10 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         cameraNode.camera = camera
         cameraNode.name = "chaseCamera"
         scene.rootNode.addChildNode(cameraNode)
-        updateCamera()
+        updateCamera(delta: 0)
     }
 
-    private func updateCamera() {
+    private func updateCamera(delta: Float) {
         let px = playerRoot.position.x
         let py = playerRoot.position.y
         let pz = playerRoot.position.z
@@ -102,6 +104,13 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             up: SCNVector3(0, 1, 0),
             localFront: SCNVector3(0, 0, -1)
         )
+
+        starsTime += delta
+        WorldBuilder3D.updateStars(
+            for: scene,
+            playerPosition: playerRoot.position,
+            time: starsTime
+        )
     }
 
     // MARK: - Input
@@ -109,6 +118,14 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     func setDirections(_ directions: Set<MoveDirection>) {
         guard !isGameOver else { return }
         activeDirections = directions
+    }
+
+    func setFiring(_ firing: Bool) {
+        guard !isGameOver else { return }
+        isFiring = firing
+        if !firing {
+            fireTimer = 0
+        }
     }
 
     // MARK: - Loop
@@ -123,7 +140,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         guard !isGameOver else { return }
 
         updatePlayer(delta: delta)
-        updateCamera()
+        updateCamera(delta: delta)
         scrollWorld(delta: delta)
 
         asteroidSpawnTimer += TimeInterval(delta)
@@ -133,7 +150,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             asteroidSpawnTimer = 0
             spawnAsteroid()
         }
-        if fireTimer >= 0.22 {
+        if isFiring, fireTimer >= 0.22 {
             fireTimer = 0
             fireBullet()
         }
@@ -162,8 +179,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         }
 
         let distance = moveSpeed * delta
-        playerRoot.position.x = clamp(playerRoot.position.x + dx * distance, min: -12, max: 12)
-        playerRoot.position.y = clamp(playerRoot.position.y + dy * distance, min: -5, max: 8)
+        playerRoot.position.x += dx * distance
+        playerRoot.position.y += dy * distance
 
         let targetBank = horizontalInput * maxBankAngle
         let blend = min(1, bankSmoothing * delta)
@@ -191,7 +208,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private func spawnAsteroid() {
         guard let asteroid = AsteroidFactory.makeAsteroid() else { return }
 
-        asteroid.position = AsteroidFactory.randomSpawnPosition()
+        asteroid.position = AsteroidFactory.randomSpawnPosition(near: playerRoot.position)
         asteroid.eulerAngles = SCNVector3(
             Float.random(in: 0...(Float.pi * 2)),
             Float.random(in: 0...(Float.pi * 2)),
