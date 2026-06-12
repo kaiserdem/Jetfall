@@ -18,6 +18,8 @@ enum AsteroidFactory {
 
     private static let minSpawnDistance: Float = 150
     private static let maxSpawnDistance: Float = 340
+    private static let cameraVerticalFOV: Float = 58 * .pi / 180
+    private static let screenAspect: Float = 9.0 / 19.5
 
     static func spawnPosition(
         near playerPosition: SCNVector3,
@@ -26,30 +28,46 @@ enum AsteroidFactory {
     ) -> SCNVector3 {
         for _ in 0..<16 {
             let distance = preferredDistance ?? Float.random(in: minSpawnDistance...maxSpawnDistance)
+            let spread = visibleSpread(at: distance)
             let candidate = SCNVector3(
-                playerPosition.x + Float.random(in: -14...14),
-                playerPosition.y + Float.random(in: -5...8),
+                playerPosition.x + Float.random(in: -spread.x...spread.x),
+                playerPosition.y + Float.random(in: -spread.y...spread.y),
                 playerPosition.z + distance
             )
 
-            if isSeparated(from: otherAsteroids, candidate: candidate) {
+            if isSeparated(from: otherAsteroids, candidate: candidate, spread: spread) {
                 return candidate
             }
         }
 
         let fallbackDistance = preferredDistance ?? Float.random(in: minSpawnDistance...maxSpawnDistance)
+        let spread = visibleSpread(at: fallbackDistance)
         return SCNVector3(
-            playerPosition.x + Float.random(in: -14...14),
-            playerPosition.y + Float.random(in: -5...8),
+            playerPosition.x + Float.random(in: -spread.x...spread.x),
+            playerPosition.y + Float.random(in: -spread.y...spread.y),
             playerPosition.z + fallbackDistance
         )
+    }
+
+    private static func visibleSpread(at distance: Float) -> (x: Float, y: Float) {
+        let horizontalFOV = 2 * atan(tan(cameraVerticalFOV / 2) * screenAspect)
+        let halfWidth = distance * tan(horizontalFOV / 2)
+        let halfHeight = distance * tan(cameraVerticalFOV / 2)
+        return (x: halfWidth * 0.92, y: halfHeight * 0.45)
     }
 
     static func initialSpawnDistances() -> [Float] {
         [170, 230, 290]
     }
 
-    private static func isSeparated(from asteroids: [SCNNode], candidate: SCNVector3) -> Bool {
+    private static func isSeparated(
+        from asteroids: [SCNNode],
+        candidate: SCNVector3,
+        spread: (x: Float, y: Float)
+    ) -> Bool {
+        let minHorizontalSeparation = max(10, spread.x * 0.22)
+        let minDepthSeparation: Float = 45
+
         for asteroid in asteroids {
             let delta = SCNVector3(
                 candidate.x - asteroid.position.x,
@@ -58,7 +76,7 @@ enum AsteroidFactory {
             )
             let horizontalDistance = hypot(delta.x, delta.y)
             let depthDistance = abs(delta.z)
-            if horizontalDistance < 9, depthDistance < 45 {
+            if horizontalDistance < minHorizontalSeparation, depthDistance < minDepthSeparation {
                 return false
             }
         }
