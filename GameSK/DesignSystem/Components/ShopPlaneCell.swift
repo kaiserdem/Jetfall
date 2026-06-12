@@ -283,7 +283,7 @@ final class ShopPlaneCell: UICollectionViewCell {
         cameraNode.camera = SCNCamera()
         cameraNode.camera?.fieldOfView = 48
         cameraNode.position = SCNVector3(0, 1.4, 10.5)
-        cameraNode.look(at: SCNVector3(0, 0, 0))
+        cameraNode.look(at: SCNVector3(0, 0.35, 0))
         scene.rootNode.addChildNode(cameraNode)
 
         let ambient = SCNNode()
@@ -295,6 +295,7 @@ final class ShopPlaneCell: UICollectionViewCell {
         let assembly = Plane3DFactory.makeFlightPlane()
         let planeNode = assembly.rootNode
         planeNode.scale = SCNVector3(0.42, 0.42, 0.42)
+        planeNode.position = SCNVector3(0, 0.3, 0)
         planeNode.eulerAngles = SCNVector3(-0.1, .pi * 0.92, 0)
         scene.rootNode.addChildNode(planeNode)
 
