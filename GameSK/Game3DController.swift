@@ -16,9 +16,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private var score = 0
     private var isGameOver = false
     private var lastUpdateTime: TimeInterval = 0
-    private var enemySpawnTimer: TimeInterval = 0
+    private var asteroidSpawnTimer: TimeInterval = 0
     private var fireTimer: TimeInterval = 0
-    private var cloudSpawnTimer: TimeInterval = 0
     private var currentBankAngle: Float = 0
     private var propellerAngle: Float = 0
 
@@ -76,8 +75,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         setupCamera()
         Plane3DFactory.addLights(to: scene.rootNode)
 
-        for _ in 0..<10 {
-            spawnCloud(at: WorldBuilder3D.randomCloudPosition())
+        for _ in 0..<8 {
+            spawnAsteroid()
         }
     }
 
@@ -127,21 +126,16 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         updateCamera()
         scrollWorld(delta: delta)
 
-        enemySpawnTimer += TimeInterval(delta)
+        asteroidSpawnTimer += TimeInterval(delta)
         fireTimer += TimeInterval(delta)
-        cloudSpawnTimer += TimeInterval(delta)
 
-        if enemySpawnTimer >= 1.4 {
-            enemySpawnTimer = 0
-            spawnEnemy()
+        if asteroidSpawnTimer >= 1.4 {
+            asteroidSpawnTimer = 0
+            spawnAsteroid()
         }
         if fireTimer >= 0.22 {
             fireTimer = 0
             fireBullet()
-        }
-        if cloudSpawnTimer >= 0.9 {
-            cloudSpawnTimer = 0
-            spawnCloud(at: WorldBuilder3D.randomCloudPosition())
         }
     }
 
@@ -194,31 +188,23 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
     // MARK: - Spawning
 
-    private func spawnCloud(at position: SCNVector3) {
-        let cloud = WorldBuilder3D.makeCloud(at: position)
-        worldNode.addChildNode(cloud)
-    }
+    private func spawnAsteroid() {
+        guard let asteroid = AsteroidFactory.makeAsteroid() else { return }
 
-    private func spawnEnemy() {
-        let enemy = AsteroidFactory.makeEnemyNode()
-        enemy.position = SCNVector3(
-            Float.random(in: -11...11),
-            Float.random(in: -3...7),
-            Float.random(in: 55...80)
-        )
-        enemy.eulerAngles = SCNVector3(
+        asteroid.position = AsteroidFactory.randomSpawnPosition()
+        asteroid.eulerAngles = SCNVector3(
             Float.random(in: 0...(Float.pi * 2)),
             Float.random(in: 0...(Float.pi * 2)),
             Float.random(in: 0...(Float.pi * 2))
         )
 
         let hitRadius: CGFloat = 1.1
-        let enemyShape = SCNPhysicsShape(geometry: SCNSphere(radius: hitRadius))
-        let body = SCNPhysicsBody(type: .kinematic, shape: enemyShape)
+        let shape = SCNPhysicsShape(geometry: SCNSphere(radius: hitRadius))
+        let body = SCNPhysicsBody(type: .kinematic, shape: shape)
         body.categoryBitMask = PhysicsCategory.enemy
         body.contactTestBitMask = PhysicsCategory.player | PhysicsCategory.playerBullet
         body.collisionBitMask = PhysicsCategory.none
-        enemy.physicsBody = body
+        asteroid.physicsBody = body
 
         let tumble = SCNAction.rotateBy(
             x: CGFloat.random(in: 0.4...1.2),
@@ -226,9 +212,9 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             z: CGFloat.random(in: 0.3...0.9),
             duration: Double.random(in: 2.5...4.5)
         )
-        enemy.runAction(.repeatForever(tumble))
+        asteroid.runAction(.repeatForever(tumble))
 
-        worldNode.addChildNode(enemy)
+        worldNode.addChildNode(asteroid)
     }
 
     private func fireBullet() {

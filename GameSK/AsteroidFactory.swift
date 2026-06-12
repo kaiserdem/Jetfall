@@ -5,24 +5,23 @@ enum AsteroidFactory {
 
     private static var template: SCNNode?
 
-    static func makeEnemyNode() -> SCNNode {
-        if let asteroid = makeFromUSDZ() {
-            return asteroid
-        }
-        return makeFallbackEnemy()
-    }
-
-    // MARK: - USDZ
-
-    private static func makeFromUSDZ() -> SCNNode? {
+    static func makeAsteroid() -> SCNNode? {
         if template == nil {
             template = loadTemplate()
         }
         guard let template else { return nil }
 
-        let enemy = template.clone()
-        enemy.name = "enemy"
-        return enemy
+        let asteroid = template.clone()
+        asteroid.name = "enemy"
+        return asteroid
+    }
+
+    static func randomSpawnPosition() -> SCNVector3 {
+        SCNVector3(
+            Float.random(in: -11...11),
+            Float.random(in: -3...7),
+            Float.random(in: 55...80)
+        )
     }
 
     private static func loadTemplate() -> SCNNode? {
@@ -102,16 +101,5 @@ enum AsteroidFactory {
             }
         }
         node.childNodes.forEach { fixMaterials(in: $0) }
-    }
-
-    // MARK: - Fallback
-
-    private static func makeFallbackEnemy() -> SCNNode {
-        let enemy = SCNNode(geometry: SCNBox(width: 1.8, height: 1.8, length: 1.8, chamferRadius: 0.15))
-        let material = SCNMaterial()
-        material.diffuse.contents = UIColor(white: 0.45, alpha: 1)
-        enemy.geometry?.materials = [material]
-        enemy.name = "enemy"
-        return enemy
     }
 }
