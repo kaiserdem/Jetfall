@@ -27,7 +27,6 @@ final class StarfieldBackgroundView: UIView {
             scnView.trailingAnchor.constraint(equalTo: trailingAnchor),
             scnView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
-        startAnimating()
     }
 
     required init?(coder: NSCoder) {

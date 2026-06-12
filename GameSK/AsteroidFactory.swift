@@ -5,10 +5,14 @@ enum AsteroidFactory {
 
     private static var template: SCNNode?
 
-    static func makeAsteroid() -> SCNNode? {
+    static func prepareTemplate() {
         if template == nil {
             template = loadTemplate()
         }
+    }
+
+    static func makeAsteroid() -> SCNNode? {
+        prepareTemplate()
         guard let template else { return nil }
 
         let asteroid = template.clone()

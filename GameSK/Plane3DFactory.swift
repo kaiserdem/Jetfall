@@ -10,12 +10,40 @@ enum Plane3DFactory {
         let hasPropeller: Bool
     }
 
+    private static var flightPlaneTemplate: PlaneAssembly?
+
     /// Plane for forward flight — nose points along +Z.
     static func makeFlightPlane() -> PlaneAssembly {
+        if let flightPlaneTemplate {
+            return cloneAssembly(flightPlaneTemplate)
+        }
         if let scene = loadUSDZ(named: "plane") {
             return buildFromUSDZ(scene, targetSpan: 3.8)
         }
         return buildProcedural(targetSpan: 3.8)
+    }
+
+    static func prepareFlightPlane() {
+        guard flightPlaneTemplate == nil else { return }
+        if let scene = loadUSDZ(named: "plane") {
+            flightPlaneTemplate = buildFromUSDZ(scene, targetSpan: 3.8)
+        } else {
+            flightPlaneTemplate = buildProcedural(targetSpan: 3.8)
+        }
+    }
+
+    private static func cloneAssembly(_ template: PlaneAssembly) -> PlaneAssembly {
+        let rootNode = template.rootNode.clone()
+        guard let bankNode = rootNode.childNode(withName: "player", recursively: false) else {
+            return template
+        }
+        let propellerNode = bankNode.childNode(withName: "propeller", recursively: true) ?? bankNode
+        return PlaneAssembly(
+            rootNode: rootNode,
+            bankNode: bankNode,
+            propellerNode: propellerNode,
+            hasPropeller: template.hasPropeller
+        )
     }
 
     // MARK: - USDZ

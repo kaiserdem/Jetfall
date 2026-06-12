@@ -2,40 +2,35 @@ import UIKit
 
 final class MenuViewController: UIViewController {
 
-    private let starfieldView = StarfieldBackgroundView()
+    private var starfieldView: StarfieldBackgroundView?
     private let titleLabel = UILabel()
     private let playButton = UIButton(type: .system)
+    private let activityIndicator = UIActivityIndicatorView(style: .medium)
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupStarfield()
+        view.backgroundColor = WorldBuilder3D.spaceColor
         setupTitle()
         setupPlayButton()
+        setupActivityIndicator()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        starfieldView.startAnimating()
+        GameAssetLoader.shared.beginPreloadingIfNeeded()
+        GameAssetLoader.shared.whenReady { [weak self] in
+            self?.showStarfieldIfNeeded()
+            self?.updatePlayButtonState()
+        }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        starfieldView.stopAnimating()
+        starfieldView?.stopAnimating()
     }
 
     override var prefersStatusBarHidden: Bool {
         true
-    }
-
-    private func setupStarfield() {
-        starfieldView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(starfieldView)
-        NSLayoutConstraint.activate([
-            starfieldView.topAnchor.constraint(equalTo: view.topAnchor),
-            starfieldView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            starfieldView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            starfieldView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
     }
 
     private func setupTitle() {
@@ -73,15 +68,66 @@ final class MenuViewController: UIViewController {
         ])
     }
 
+    private func setupActivityIndicator() {
+        activityIndicator.translatesAutoresizingMaskIntoConstraints = false
+        activityIndicator.color = .white
+        activityIndicator.hidesWhenStopped = true
+        view.addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: playButton.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: playButton.centerYAnchor)
+        ])
+    }
+
+    private func showStarfieldIfNeeded() {
+        guard starfieldView == nil else { return }
+
+        let starfield = StarfieldBackgroundView()
+        starfield.translatesAutoresizingMaskIntoConstraints = false
+        starfield.alpha = 0
+        view.insertSubview(starfield, at: 0)
+        NSLayoutConstraint.activate([
+            starfield.topAnchor.constraint(equalTo: view.topAnchor),
+            starfield.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            starfield.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            starfield.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        starfieldView = starfield
+        starfield.startAnimating()
+
+        UIView.animate(withDuration: 0.35) {
+            starfield.alpha = 1
+        }
+    }
+
+    private func updatePlayButtonState() {
+        playButton.isEnabled = true
+        activityIndicator.stopAnimating()
+        playButton.setTitle("Play", for: .normal)
+    }
+
     @objc private func playTapped() {
+        playButton.isEnabled = false
+        playButton.setTitle("", for: .normal)
+        activityIndicator.startAnimating()
+
+        GameAssetLoader.shared.whenReady { [weak self] in
+            self?.presentGame()
+        }
+    }
+
+    private func presentGame() {
         guard let gameViewController = storyboard?.instantiateViewController(
             withIdentifier: "GameViewController"
         ) as? GameViewController else {
+            updatePlayButtonState()
             return
         }
 
         gameViewController.modalPresentationStyle = .fullScreen
         gameViewController.modalTransitionStyle = .crossDissolve
-        present(gameViewController, animated: true)
+        present(gameViewController, animated: true) { [weak self] in
+            self?.updatePlayButtonState()
+        }
     }
 }

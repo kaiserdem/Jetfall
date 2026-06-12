@@ -8,6 +8,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
     private let hudView = GameHUDView()
     private let dPadView = VirtualDPadView()
     private let fireButtonView = FireButtonView()
+    private var startingLevel = 1
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -58,7 +59,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
     }
 
     private func startGame() {
-        gameController = Game3DController(scnView: scnView)
+        gameController = Game3DController(scnView: scnView, startingLevel: startingLevel)
 
         gameController.onScoreChange = { [weak self] score in
             DispatchQueue.main.async {
@@ -66,20 +67,58 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             }
         }
 
-        gameController.onGameOver = { [weak self] in
+        gameController.onLevelProgress = { [weak self] level, destroyed, required in
             DispatchQueue.main.async {
-                self?.hudView.showGameOver(true)
-                self?.dPadView.clearAll()
-                self?.fireButtonView.clear()
+                self?.hudView.updateLevelProgress(level: level, destroyed: destroyed, required: required)
             }
         }
 
-        hudView.onRestartTapped = { [weak self] in
-            self?.restartGame()
+        gameController.onLevelComplete = { [weak self] level, hasNextLevel in
+            DispatchQueue.main.async {
+                self?.dPadView.clearAll()
+                self?.fireButtonView.clear()
+                self?.hudView.showLevelComplete(level: level, hasNextLevel: hasNextLevel)
+            }
         }
 
+        gameController.onGameOver = { [weak self] level in
+            DispatchQueue.main.async {
+                self?.dPadView.clearAll()
+                self?.fireButtonView.clear()
+                self?.hudView.showGameOver(level: level)
+            }
+        }
+
+        gameController.onVictory = { [weak self] in
+            DispatchQueue.main.async {
+                self?.dPadView.clearAll()
+                self?.fireButtonView.clear()
+                self?.hudView.showVictory()
+            }
+        }
+
+        hudView.onOverlayTapped = { [weak self] in
+            self?.handleOverlayTap()
+        }
+
+        hudView.hideOverlay()
         hudView.updateScore(0)
-        hudView.showGameOver(false)
+    }
+
+    private func handleOverlayTap() {
+        guard let action = hudView.overlayAction else { return }
+
+        switch action {
+        case .nextLevel:
+            hudView.hideOverlay()
+            gameController.advanceToNextLevel()
+        case .retryLevel:
+            hudView.hideOverlay()
+            gameController.restartCurrentLevel()
+        case .restartCampaign:
+            startingLevel = 1
+            restartGame()
+        }
     }
 
     private func restartGame() {

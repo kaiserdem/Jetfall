@@ -15,24 +15,33 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private var isFiring = false
     private var score = 0
     private var isGameOver = false
+    private var isLevelComplete = false
     private var lastUpdateTime: TimeInterval = 0
     private var asteroidSpawnTimer: TimeInterval = 0
     private var fireTimer: TimeInterval = 0
     private var currentBankAngle: Float = 0
     private var propellerAngle: Float = 0
 
+    private var currentLevel = 1
+    private var levelConfig = LevelConfigFactory.config(for: 1)
+    private var killsThisLevel = 0
+
     private let hasPropeller: Bool
     private let moveSpeed: Float = 14
-    private let worldScrollSpeed: Float = 28
+    private let asteroidSpawnInterval: TimeInterval = 0.9
     private let maxBankAngle: Float = .pi / 6
     private let bankSmoothing: Float = 10
     private let propellerSpeed: Float = 24
 
     var onScoreChange: ((Int) -> Void)?
-    var onGameOver: (() -> Void)?
+    var onLevelProgress: ((Int, Int, Int) -> Void)?
+    var onLevelComplete: ((Int, Bool) -> Void)?
+    var onGameOver: ((Int) -> Void)?
+    var onVictory: (() -> Void)?
 
-    init(scnView: SCNView) {
+    init(scnView: SCNView, startingLevel: Int = 1) {
         self.scnView = scnView
+        self.currentLevel = max(1, min(LevelConfigFactory.totalLevels, startingLevel))
 
         let assembly = Plane3DFactory.makeFlightPlane()
         bankNode = assembly.bankNode
@@ -50,6 +59,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         scnView.loops = true
         scnView.antialiasingMode = .multisampling4X
         scnView.backgroundColor = WorldBuilder3D.spaceColor
+
+        beginLevel(currentLevel)
     }
 
     // MARK: - Setup
@@ -75,10 +86,6 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
         setupCamera()
         Plane3DFactory.addLights(to: scene.rootNode)
-
-        for distance in AsteroidFactory.initialSpawnDistances() {
-            spawnAsteroid(preferredDistance: distance)
-        }
     }
 
     private func setupCamera() {
@@ -91,6 +98,78 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         scene.rootNode.addChildNode(cameraNode)
         updateCamera(delta: 0)
     }
+
+    // MARK: - Levels
+
+    func advanceToNextLevel() {
+        guard isLevelComplete else { return }
+
+        if currentLevel >= LevelConfigFactory.totalLevels {
+            onVictory?()
+            return
+        }
+
+        beginLevel(currentLevel + 1)
+    }
+
+    func restartCurrentLevel() {
+        beginLevel(currentLevel)
+    }
+
+    func restartCampaign() {
+        score = 0
+        onScoreChange?(score)
+        beginLevel(1)
+    }
+
+    private func beginLevel(_ level: Int) {
+        currentLevel = max(1, min(LevelConfigFactory.totalLevels, level))
+        levelConfig = LevelConfigFactory.config(for: currentLevel)
+        killsThisLevel = 0
+        isLevelComplete = false
+        lastUpdateTime = 0
+        isGameOver = false
+        isFiring = false
+        fireTimer = 0
+        asteroidSpawnTimer = 0
+        activeDirections = []
+        currentBankAngle = 0
+
+        playerRoot.isHidden = false
+        playerRoot.position = SCNVector3(0, 0, 0)
+        bankNode.rotation = SCNVector4Zero
+
+        clearEnemies()
+        spawnInitialAsteroids()
+        notifyLevelProgress()
+    }
+
+    private func clearEnemies() {
+        worldNode.childNodes
+            .filter { $0.name == "enemy" || $0.name == "bullet" }
+            .forEach { $0.removeFromParentNode() }
+    }
+
+    private func spawnInitialAsteroids() {
+        for distance in AsteroidFactory.initialSpawnDistances() {
+            spawnAsteroid(preferredDistance: distance)
+        }
+    }
+
+    private func notifyLevelProgress() {
+        onLevelProgress?(currentLevel, killsThisLevel, levelConfig.asteroidsToDestroy)
+    }
+
+    private func completeLevel() {
+        guard !isLevelComplete else { return }
+        isLevelComplete = true
+        isFiring = false
+        activeDirections = []
+        let hasNextLevel = currentLevel < LevelConfigFactory.totalLevels
+        onLevelComplete?(currentLevel, hasNextLevel)
+    }
+
+    // MARK: - Camera
 
     private func updateCamera(delta: Float) {
         let px = playerRoot.position.x
@@ -114,12 +193,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     // MARK: - Input
 
     func setDirections(_ directions: Set<MoveDirection>) {
-        guard !isGameOver else { return }
+        guard !isGameOver, !isLevelComplete else { return }
         activeDirections = directions
     }
 
     func setFiring(_ firing: Bool) {
-        guard !isGameOver else { return }
+        guard !isGameOver, !isLevelComplete else { return }
         isFiring = firing
         if !firing {
             fireTimer = 0
@@ -131,11 +210,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
         if lastUpdateTime == 0 {
             lastUpdateTime = time
+            return
         }
-        let delta = Float(time - lastUpdateTime)
+        let delta = min(Float(time - lastUpdateTime), 1.0 / 30.0)
         lastUpdateTime = time
 
-        guard !isGameOver else { return }
+        guard !isGameOver, !isLevelComplete else { return }
 
         updatePlayer(delta: delta)
         updateCamera(delta: delta)
@@ -144,7 +224,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         asteroidSpawnTimer += TimeInterval(delta)
         fireTimer += TimeInterval(delta)
 
-        if asteroidSpawnTimer >= 0.9 {
+        if asteroidSpawnTimer >= asteroidSpawnInterval {
             asteroidSpawnTimer = 0
             spawnAsteroid()
         }
@@ -192,7 +272,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     }
 
     private func scrollWorld(delta: Float) {
-        let offset = worldScrollSpeed * delta
+        let offset = levelConfig.approachSpeed * delta
         for node in worldNode.childNodes {
             node.position.z -= offset
             if node.position.z < -15 {
@@ -204,6 +284,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     // MARK: - Spawning
 
     private func spawnAsteroid(preferredDistance: Float? = nil) {
+        guard !isGameOver, !isLevelComplete else { return }
         guard let asteroid = AsteroidFactory.makeAsteroid() else { return }
 
         let existingAsteroids = worldNode.childNodes.filter { $0.name == "enemy" }
@@ -294,6 +375,16 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             enemyNode.removeFromParentNode()
             self.score += 10
             self.onScoreChange?(self.score)
+            self.registerKill()
+        }
+    }
+
+    private func registerKill() {
+        killsThisLevel += 1
+        notifyLevelProgress()
+
+        if killsThisLevel >= levelConfig.asteroidsToDestroy {
+            completeLevel()
         }
     }
 
@@ -315,16 +406,14 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private func triggerGameOver() {
         guard !isGameOver else { return }
         isGameOver = true
+        isFiring = false
+        activeDirections = []
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.addExplosion(at: self.playerRoot.worldPosition)
             self.playerRoot.isHidden = true
-            self.onGameOver?()
+            self.onGameOver?(self.currentLevel)
         }
-    }
-
-    private func clamp(_ value: Float, min: Float, max: Float) -> Float {
-        Swift.max(min, Swift.min(max, value))
     }
 }

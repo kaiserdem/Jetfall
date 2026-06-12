@@ -58,6 +58,14 @@ enum WorldBuilder3D {
         scene.background.contentsTransform = SCNMatrix4MakeTranslation(starOffsetX, starOffsetY, 0)
     }
 
+    static func buildStarsTextureImage() -> UIImage {
+        drawStarsImage()
+    }
+
+    static func installStarsTexture(_ image: UIImage) {
+        starsImage = image
+    }
+
     private static func starsTexture() -> UIImage {
         if let starsImage {
             return starsImage
