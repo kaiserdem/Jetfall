@@ -100,7 +100,7 @@ enum AsteroidFactory {
         normalizeScale(of: wrapper, targetSpan: 2.4)
 
         #if DEBUG
-        print("[AsteroidFactory] Asteroid.usdz завантажено")
+        print("[AsteroidFactory] Asteroid.usdz loaded")
         #endif
 
         return wrapper

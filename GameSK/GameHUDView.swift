@@ -6,7 +6,7 @@ final class GameHUDView: UIView {
         let label = UILabel()
         label.font = .boldSystemFont(ofSize: 24)
         label.textColor = .white
-        label.text = "Рахунок: 0"
+        label.text = "Score: 0"
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -15,7 +15,7 @@ final class GameHUDView: UIView {
         let label = UILabel()
         label.font = .boldSystemFont(ofSize: 36)
         label.textColor = .white
-        label.text = "Гра закінчена"
+        label.text = "Game Over"
         label.textAlignment = .center
         label.alpha = 0
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -26,7 +26,7 @@ final class GameHUDView: UIView {
         let label = UILabel()
         label.font = .systemFont(ofSize: 20, weight: .medium)
         label.textColor = .white
-        label.text = "Торкніться, щоб грати знову"
+        label.text = "Tap to play again"
         label.textAlignment = .center
         label.alpha = 0
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -60,7 +60,7 @@ final class GameHUDView: UIView {
     }
 
     func updateScore(_ score: Int) {
-        scoreLabel.text = "Рахунок: \(score)"
+        scoreLabel.text = "Score: \(score)"
     }
 
     func showGameOver(_ show: Bool) {

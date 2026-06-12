@@ -20,10 +20,14 @@ enum WorldBuilder3D {
         tracksPlayer = false
     }
 
-    static func configureEnvironment(for scene: SCNScene) {
+    static func applyStarBackground(to scene: SCNScene) {
         scene.background.contents = starsTexture()
         scene.background.wrapS = .repeat
         scene.background.wrapT = .repeat
+    }
+
+    static func configureEnvironment(for scene: SCNScene) {
+        applyStarBackground(to: scene)
         scene.fogColor = spaceColor
         scene.fogStartDistance = 120
         scene.fogEndDistance = 360

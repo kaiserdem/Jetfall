@@ -10,7 +10,7 @@ enum Plane3DFactory {
         let hasPropeller: Bool
     }
 
-    /// Літак для польоту «у світ» — ніс дивиться в +Z.
+    /// Plane for forward flight — nose points along +Z.
     static func makeFlightPlane() -> PlaneAssembly {
         if let scene = loadUSDZ(named: "plane") {
             return buildFromUSDZ(scene, targetSpan: 3.8)
@@ -50,7 +50,7 @@ enum Plane3DFactory {
         let hasPropeller = propellerNode != nil
 
         #if DEBUG
-        print("[Plane3DFactory] USDZ для польоту: \(sourceModel.name ?? "model")")
+        print("[Plane3DFactory] USDZ for flight: \(sourceModel.name ?? "model")")
         #endif
 
         return PlaneAssembly(
@@ -139,7 +139,7 @@ enum Plane3DFactory {
     }
 
     private static func orientForFlight(_ node: SCNNode) {
-        // Y-up (Sketchfab) → ніс у +Z, «дном» вниз (не перевернутий).
+        // Y-up (Sketchfab) → nose along +Z, belly down (not flipped).
         node.eulerAngles = SCNVector3(-Float.pi / 2, Float.pi, Float.pi)
     }
 
