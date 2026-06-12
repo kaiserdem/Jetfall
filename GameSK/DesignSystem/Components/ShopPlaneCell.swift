@@ -24,9 +24,6 @@ final class ShopPlaneCell: UICollectionViewCell {
     private let unlockRequirementLabel = UILabel()
     private var lockedInfoCollapsedHeight: NSLayoutConstraint?
     private var didConfigureScene = false
-    private let previewButton = UIButton(type: .system)
-
-    var onPreviewTapped: (() -> Void)?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -45,7 +42,6 @@ final class ShopPlaneCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         sceneView.isPlaying = false
-        onPreviewTapped = nil
     }
 
     private func setup() {
@@ -72,20 +68,6 @@ final class ShopPlaneCell: UICollectionViewCell {
         glowView.layer.cornerRadius = 22
         glowView.isUserInteractionEnabled = false
         glowView.isHidden = true
-
-        previewButton.translatesAutoresizingMaskIntoConstraints = false
-        previewButton.setImage(
-            UIImage(systemName: "view.3d")?.withConfiguration(
-                UIImage.SymbolConfiguration(pointSize: 13, weight: .bold)
-            ),
-            for: .normal
-        )
-        previewButton.tintColor = GameStyle.textPrimary
-        previewButton.backgroundColor = GameStyle.panelBlueDark.withAlphaComponent(0.92)
-        previewButton.layer.cornerRadius = 14
-        previewButton.layer.borderWidth = 1
-        previewButton.layer.borderColor = GameStyle.borderSteel.cgColor
-        previewButton.addTarget(self, action: #selector(previewTapped), for: .touchUpInside)
 
         accentStripe.translatesAutoresizingMaskIntoConstraints = false
         accentStripe.layer.cornerRadius = 2
@@ -166,7 +148,6 @@ final class ShopPlaneCell: UICollectionViewCell {
         previewContainer.addSubview(blurOverlay)
         previewContainer.addSubview(lockIcon)
         previewContainer.addSubview(classifiedLabel)
-        previewContainer.addSubview(previewButton)
 
         shadowWrapper.insertSubview(glowView, at: 0)
         cardView.addSubview(accentStripe)
@@ -222,7 +203,7 @@ final class ShopPlaneCell: UICollectionViewCell {
             previewContainer.topAnchor.constraint(equalTo: priceLabel.bottomAnchor, constant: 10),
             previewContainer.leadingAnchor.constraint(equalTo: accentStripe.trailingAnchor, constant: 10),
             previewContainer.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
-            previewContainer.heightAnchor.constraint(equalToConstant: 118),
+            previewContainer.heightAnchor.constraint(equalToConstant: 96),
 
             sceneView.topAnchor.constraint(equalTo: previewContainer.topAnchor),
             sceneView.leadingAnchor.constraint(equalTo: previewContainer.leadingAnchor),
@@ -241,11 +222,6 @@ final class ShopPlaneCell: UICollectionViewCell {
 
             classifiedLabel.topAnchor.constraint(equalTo: lockIcon.bottomAnchor, constant: 4),
             classifiedLabel.centerXAnchor.constraint(equalTo: previewContainer.centerXAnchor),
-
-            previewButton.trailingAnchor.constraint(equalTo: previewContainer.trailingAnchor, constant: -8),
-            previewButton.bottomAnchor.constraint(equalTo: previewContainer.bottomAnchor, constant: -8),
-            previewButton.widthAnchor.constraint(equalToConstant: 28),
-            previewButton.heightAnchor.constraint(equalToConstant: 28),
 
             requirementsStack.topAnchor.constraint(equalTo: previewContainer.bottomAnchor, constant: 8),
             requirementsStack.leadingAnchor.constraint(equalTo: aircraftTag.leadingAnchor),
@@ -286,10 +262,6 @@ final class ShopPlaneCell: UICollectionViewCell {
         contentView.alpha = alpha
     }
 
-    @objc private func previewTapped() {
-        onPreviewTapped?()
-    }
-
     private func formattedPrice(for plane: ShopPlane) -> String {
         if plane.creditCost == 0 {
             return "FREE"
@@ -303,7 +275,33 @@ final class ShopPlaneCell: UICollectionViewCell {
     private func configureSceneIfNeeded() {
         guard !didConfigureScene else { return }
         didConfigureScene = true
-        AircraftPreviewSceneBuilder.attach(to: sceneView, style: .thumbnail)
+
+        let scene = SCNScene()
+        sceneView.scene = scene
+
+        let cameraNode = SCNNode()
+        cameraNode.camera = SCNCamera()
+        cameraNode.camera?.fieldOfView = 48
+        cameraNode.position = SCNVector3(0, 1.4, 10.5)
+        cameraNode.look(at: SCNVector3(0, 0, 0))
+        scene.rootNode.addChildNode(cameraNode)
+
+        let ambient = SCNNode()
+        ambient.light = SCNLight()
+        ambient.light?.type = .ambient
+        ambient.light?.intensity = 420
+        scene.rootNode.addChildNode(ambient)
+
+        let assembly = Plane3DFactory.makeFlightPlane()
+        let planeNode = assembly.rootNode
+        planeNode.scale = SCNVector3(0.42, 0.42, 0.42)
+        planeNode.eulerAngles = SCNVector3(-0.1, .pi * 0.92, 0)
+        scene.rootNode.addChildNode(planeNode)
+
+        let rotate = SCNAction.repeatForever(
+            SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 14)
+        )
+        planeNode.runAction(rotate)
     }
 
     private func applyEquippedStyle() {

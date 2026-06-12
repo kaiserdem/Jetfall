@@ -36,7 +36,6 @@ final class HangarShopViewController: UIViewController {
     private let footerPanel = UIView()
     private let planeCounterLabel = UILabel()
     private let planeHintLabel = UILabel()
-    private let previewButton = UIButton(type: .system)
     private let actionButton = UIButton(type: .system)
 
     private let planes = ShopPlaneCatalog.all
@@ -44,6 +43,8 @@ final class HangarShopViewController: UIViewController {
     private var didPerformInitialScroll = false
     private var carouselScrollOffset: CGPoint = .zero
     private var carouselContainerWidth: CGFloat = 0
+    private var pagerNavigationTarget: Int?
+    private var pagerNavigationUnlockWorkItem: DispatchWorkItem?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -170,17 +171,12 @@ final class HangarShopViewController: UIViewController {
         planeHintLabel.numberOfLines = 2
         planeHintLabel.lineBreakMode = .byWordWrapping
 
-        previewButton.translatesAutoresizingMaskIntoConstraints = false
-        GameStyle.applySecondaryButton(previewButton, title: "3D Preview")
-        previewButton.addTarget(self, action: #selector(previewTapped), for: .touchUpInside)
-
         actionButton.translatesAutoresizingMaskIntoConstraints = false
         GameStyle.applyMissionLaunchButton(actionButton, title: "Equip", style: .active)
         actionButton.addTarget(self, action: #selector(actionTapped), for: .touchUpInside)
 
         footerPanel.addSubview(planeCounterLabel)
         footerPanel.addSubview(planeHintLabel)
-        footerPanel.addSubview(previewButton)
         footerPanel.addSubview(actionButton)
 
         NSLayoutConstraint.activate([
@@ -192,11 +188,7 @@ final class HangarShopViewController: UIViewController {
             planeHintLabel.leadingAnchor.constraint(equalTo: planeCounterLabel.leadingAnchor),
             planeHintLabel.trailingAnchor.constraint(equalTo: planeCounterLabel.trailingAnchor),
 
-            previewButton.topAnchor.constraint(equalTo: planeHintLabel.bottomAnchor, constant: 14),
-            previewButton.leadingAnchor.constraint(equalTo: footerPanel.leadingAnchor, constant: 16),
-            previewButton.trailingAnchor.constraint(equalTo: footerPanel.trailingAnchor, constant: -16),
-
-            actionButton.topAnchor.constraint(equalTo: previewButton.bottomAnchor, constant: 10),
+            actionButton.topAnchor.constraint(equalTo: planeHintLabel.bottomAnchor, constant: 16),
             actionButton.leadingAnchor.constraint(equalTo: footerPanel.leadingAnchor, constant: 16),
             actionButton.trailingAnchor.constraint(equalTo: footerPanel.trailingAnchor, constant: -16),
             actionButton.heightAnchor.constraint(equalToConstant: GameStyle.missionLaunchButtonHeight),
@@ -276,7 +268,7 @@ final class HangarShopViewController: UIViewController {
 
     private func makeCarouselLayout() -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { _, environment in
-            let cardHeight = min(334, environment.container.effectiveContentSize.height * 0.84)
+            let cardHeight = min(318, environment.container.effectiveContentSize.height * 0.82)
 
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1),
@@ -355,15 +347,38 @@ final class HangarShopViewController: UIViewController {
     }
 
     private func reportFocusedPlane(_ planeID: Int) {
-        guard planeID != focusedPlaneID else { return }
-
-        if Thread.isMainThread {
-            updateFocusedPlane(planeID)
-        } else {
-            DispatchQueue.main.async { [weak self] in
-                self?.updateFocusedPlane(planeID)
-            }
+        if let target = pagerNavigationTarget {
+            guard planeID == target else { return }
+            clearPagerNavigationLock()
+            return
         }
+
+        guard planeID != focusedPlaneID else { return }
+        updateFocusedPlane(planeID)
+    }
+
+    private func beginPagerNavigation(to planeID: Int) {
+        pagerNavigationTarget = planeID
+        schedulePagerNavigationUnlock()
+
+        scrollToPlane(planeID, animated: true)
+        updateFocusedPlane(planeID)
+        applyCarouselTransforms()
+    }
+
+    private func schedulePagerNavigationUnlock() {
+        pagerNavigationUnlockWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.pagerNavigationTarget = nil
+        }
+        pagerNavigationUnlockWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+    }
+
+    private func clearPagerNavigationLock() {
+        pagerNavigationTarget = nil
+        pagerNavigationUnlockWorkItem?.cancel()
+        pagerNavigationUnlockWorkItem = nil
     }
 
     private func updateFocusedPlane(_ planeID: Int? = nil) {
@@ -453,9 +468,7 @@ final class HangarShopViewController: UIViewController {
     private func stepFocusedPlane(by delta: Int) {
         let nextID = max(1, min(planes.count, focusedPlaneID + delta))
         guard nextID != focusedPlaneID else { return }
-        scrollToPlane(nextID, animated: true)
-        updateFocusedPlane(nextID)
-        applyCarouselTransforms()
+        beginPagerNavigation(to: nextID)
     }
 
     private func planeAtCarouselCenter() -> Int {
@@ -545,21 +558,6 @@ final class HangarShopViewController: UIViewController {
         dismiss(animated: true)
     }
 
-    @objc private func previewTapped() {
-        presentAircraftPreview(for: focusedPlaneID)
-    }
-
-    private func presentAircraftPreview(for planeID: Int) {
-        guard let plane = ShopPlaneCatalog.plane(for: planeID) else { return }
-
-        GameAssetLoader.shared.whenReady { [weak self] in
-            let preview = AircraftPreviewViewController(plane: plane)
-            preview.modalPresentationStyle = .overFullScreen
-            preview.modalTransitionStyle = .crossDissolve
-            self?.present(preview, animated: true)
-        }
-    }
-
     @objc private func actionTapped() {
         guard let plane = ShopPlaneCatalog.plane(for: focusedPlaneID) else { return }
 
@@ -623,18 +621,22 @@ extension HangarShopViewController: UICollectionViewDataSource, UICollectionView
             return UICollectionViewCell()
         }
 
-        let plane = planes[indexPath.item]
-        cell.configure(with: plane)
-        cell.onPreviewTapped = { [weak self] in
-            self?.presentAircraftPreview(for: plane.id)
-        }
+        cell.configure(with: planes[indexPath.item])
         return cell
     }
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let planeID = planes[indexPath.item].id
-        scrollToPlane(planeID, animated: true)
-        updateFocusedPlane(planeID)
-        applyCarouselTransforms()
+        beginPagerNavigation(to: planes[indexPath.item].id)
+    }
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        clearPagerNavigationLock()
+        updateFocusedPlane()
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        guard !decelerate else { return }
+        clearPagerNavigationLock()
+        updateFocusedPlane()
     }
 }

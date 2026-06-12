@@ -28,7 +28,7 @@ final class LevelSelectViewController: UIViewController {
     private let progressTrack = UIView()
     private let progressFill = UIView()
     private var progressFillWidth: NSLayoutConstraint?
-    private let backButton = AviatorNavButton(style: .labeled(symbol: "chevron.left", title: "Hangar"))
+    private let backButton = AviatorNavButton(style: .labeled(symbol: "chevron.left", title: "Menu"))
     private let creditsBadge = HangarCreditsBadge()
     private var collectionView: UICollectionView!
 
@@ -43,6 +43,8 @@ final class LevelSelectViewController: UIViewController {
     private var didPerformInitialScroll = false
     private var carouselScrollOffset: CGPoint = .zero
     private var carouselContainerWidth: CGFloat = 0
+    private var pagerNavigationTarget: Int?
+    private var pagerNavigationUnlockWorkItem: DispatchWorkItem?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -350,15 +352,38 @@ final class LevelSelectViewController: UIViewController {
     }
 
     private func reportFocusedLevel(_ level: Int) {
-        guard level != focusedLevel else { return }
-
-        if Thread.isMainThread {
-            updateFocusedLevel(level)
-        } else {
-            DispatchQueue.main.async { [weak self] in
-                self?.updateFocusedLevel(level)
-            }
+        if let target = pagerNavigationTarget {
+            guard level == target else { return }
+            clearPagerNavigationLock()
+            return
         }
+
+        guard level != focusedLevel else { return }
+        updateFocusedLevel(level)
+    }
+
+    private func beginPagerNavigation(to level: Int) {
+        pagerNavigationTarget = level
+        schedulePagerNavigationUnlock()
+
+        scrollToLevel(level, animated: true)
+        updateFocusedLevel(level)
+        applyCarouselTransforms()
+    }
+
+    private func schedulePagerNavigationUnlock() {
+        pagerNavigationUnlockWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.pagerNavigationTarget = nil
+        }
+        pagerNavigationUnlockWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
+    }
+
+    private func clearPagerNavigationLock() {
+        pagerNavigationTarget = nil
+        pagerNavigationUnlockWorkItem?.cancel()
+        pagerNavigationUnlockWorkItem = nil
     }
 
     private func updateFocusedLevel(_ level: Int? = nil) {
@@ -435,9 +460,7 @@ final class LevelSelectViewController: UIViewController {
     private func stepFocusedLevel(by delta: Int) {
         let nextLevel = max(1, min(levels.count, focusedLevel + delta))
         guard nextLevel != focusedLevel else { return }
-        scrollToLevel(nextLevel, animated: true)
-        updateFocusedLevel(nextLevel)
-        applyCarouselTransforms()
+        beginPagerNavigation(to: nextLevel)
     }
 
     private func levelAtCarouselCenter() -> Int {
@@ -577,18 +600,19 @@ extension LevelSelectViewController: UICollectionViewDataSource, UICollectionVie
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let level = levels[indexPath.item]
-        scrollToLevel(level, animated: true)
-        updateFocusedLevel(level)
+        beginPagerNavigation(to: level)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        clearPagerNavigationLock()
         updateFocusedLevel()
         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         guard !decelerate else { return }
+        clearPagerNavigationLock()
         updateFocusedLevel()
     }
 }
