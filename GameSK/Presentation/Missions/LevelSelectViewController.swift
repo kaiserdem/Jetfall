@@ -3,7 +3,7 @@ import UIKit
 final class LevelSelectViewController: UIViewController {
 
     private enum CarouselMetrics {
-        static let cardWidthFraction: CGFloat = 0.72
+        static let cardWidthFraction: CGFloat = 0.78
         static let interGroupSpacing: CGFloat = 14
         static let horizontalInset: CGFloat = 12
         static let maxAlphaReduction: CGFloat = 0.26
@@ -268,7 +268,7 @@ final class LevelSelectViewController: UIViewController {
 
     private func makeCarouselLayout() -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { _, environment in
-            let cardHeight = min(260, environment.container.effectiveContentSize.height * 0.72)
+            let cardHeight = min(300, environment.container.effectiveContentSize.height * 0.82)
 
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1),

@@ -3,7 +3,7 @@ import UIKit
 final class HangarShopViewController: UIViewController {
 
     private enum CarouselMetrics {
-        static let cardWidthFraction: CGFloat = 0.72
+        static let cardWidthFraction: CGFloat = 0.78
         static let interGroupSpacing: CGFloat = 14
         static let horizontalInset: CGFloat = 12
         static let maxAlphaReduction: CGFloat = 0.26
@@ -268,7 +268,7 @@ final class HangarShopViewController: UIViewController {
 
     private func makeCarouselLayout() -> UICollectionViewCompositionalLayout {
         UICollectionViewCompositionalLayout { _, environment in
-            let cardHeight = min(318, environment.container.effectiveContentSize.height * 0.82)
+            let cardHeight = min(342, environment.container.effectiveContentSize.height * 0.86)
 
             let itemSize = NSCollectionLayoutSize(
                 widthDimension: .fractionalWidth(1),

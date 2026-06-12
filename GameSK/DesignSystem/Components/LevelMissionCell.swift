@@ -4,6 +4,7 @@ final class LevelMissionCell: UICollectionViewCell {
 
     static let reuseID = "LevelMissionCell"
 
+    private let shadowWrapper = UIView()
     private let cardView = UIView()
     private let gradientLayer = CAGradientLayer()
     private let accentStripe = UIView()
@@ -33,10 +34,17 @@ final class LevelMissionCell: UICollectionViewCell {
         gradientLayer.frame = cardView.bounds
     }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        glowView.isHidden = true
+        shadowWrapper.transform = .identity
+        cardView.transform = .identity
+    }
+
     override var isHighlighted: Bool {
         didSet {
             UIView.animate(withDuration: 0.15) {
-                self.cardView.transform = self.isHighlighted
+                self.shadowWrapper.transform = self.isHighlighted
                     ? CGAffineTransform(scaleX: 0.96, y: 0.96)
                     : .identity
             }
@@ -46,13 +54,17 @@ final class LevelMissionCell: UICollectionViewCell {
     private func setup() {
         contentView.backgroundColor = .clear
 
+        shadowWrapper.translatesAutoresizingMaskIntoConstraints = false
+        shadowWrapper.backgroundColor = .clear
+        shadowWrapper.layer.shadowColor = UIColor.black.cgColor
+        shadowWrapper.layer.shadowOpacity = 0.35
+        shadowWrapper.layer.shadowRadius = 8
+        shadowWrapper.layer.shadowOffset = CGSize(width: 0, height: 4)
+
         cardView.translatesAutoresizingMaskIntoConstraints = false
         cardView.layer.cornerRadius = 20
-        cardView.layer.masksToBounds = false
-        cardView.layer.shadowColor = UIColor.black.cgColor
-        cardView.layer.shadowOpacity = 0.35
-        cardView.layer.shadowRadius = 8
-        cardView.layer.shadowOffset = CGSize(width: 0, height: 4)
+        cardView.layer.borderWidth = 1.5
+        cardView.layer.masksToBounds = true
 
         gradientLayer.cornerRadius = 20
         gradientLayer.startPoint = CGPoint(x: 0, y: 0)
@@ -60,7 +72,7 @@ final class LevelMissionCell: UICollectionViewCell {
         cardView.layer.insertSublayer(gradientLayer, at: 0)
 
         glowView.translatesAutoresizingMaskIntoConstraints = false
-        glowView.layer.cornerRadius = 22
+        glowView.layer.cornerRadius = 20
         glowView.isUserInteractionEnabled = false
         glowView.isHidden = true
 
@@ -108,8 +120,10 @@ final class LevelMissionCell: UICollectionViewCell {
         targetsChip.translatesAutoresizingMaskIntoConstraints = false
         fuelChip.translatesAutoresizingMaskIntoConstraints = false
 
-        contentView.addSubview(cardView)
-        cardView.insertSubview(glowView, at: 0)
+        shadowWrapper.insertSubview(glowView, at: 0)
+        shadowWrapper.addSubview(cardView)
+        contentView.addSubview(shadowWrapper)
+
         cardView.addSubview(accentStripe)
         cardView.addSubview(missionTag)
         cardView.addSubview(numberLabel)
@@ -118,16 +132,23 @@ final class LevelMissionCell: UICollectionViewCell {
         cardView.addSubview(targetsChip)
         cardView.addSubview(fuelChip)
 
-        NSLayoutConstraint.activate([
-            cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
-            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
+        lockedInfoCollapsedHeight = lockedInfoStack.heightAnchor.constraint(equalToConstant: 0)
 
-            glowView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: -3),
-            glowView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: -3),
-            glowView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: 3),
-            glowView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: 3),
+        NSLayoutConstraint.activate([
+            shadowWrapper.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 4),
+            shadowWrapper.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            shadowWrapper.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            shadowWrapper.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
+
+            glowView.topAnchor.constraint(equalTo: shadowWrapper.topAnchor),
+            glowView.leadingAnchor.constraint(equalTo: shadowWrapper.leadingAnchor),
+            glowView.trailingAnchor.constraint(equalTo: shadowWrapper.trailingAnchor),
+            glowView.bottomAnchor.constraint(equalTo: shadowWrapper.bottomAnchor),
+
+            cardView.topAnchor.constraint(equalTo: shadowWrapper.topAnchor, constant: 3),
+            cardView.leadingAnchor.constraint(equalTo: shadowWrapper.leadingAnchor, constant: 3),
+            cardView.trailingAnchor.constraint(equalTo: shadowWrapper.trailingAnchor, constant: -3),
+            cardView.bottomAnchor.constraint(equalTo: shadowWrapper.bottomAnchor, constant: -3),
 
             accentStripe.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 12),
             accentStripe.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 14),
@@ -158,8 +179,6 @@ final class LevelMissionCell: UICollectionViewCell {
             fuelChip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
             fuelChip.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12)
         ])
-
-        lockedInfoCollapsedHeight = lockedInfoStack.heightAnchor.constraint(equalToConstant: 0)
     }
 
     func configure(level: Int, isUnlocked: Bool, asteroids: Int, fuelSeconds: Int) {
@@ -178,13 +197,15 @@ final class LevelMissionCell: UICollectionViewCell {
         targetsChip.setMuted(!isUnlocked)
         fuelChip.setMuted(!isUnlocked)
 
-        cardView.layer.borderWidth = 1.5
+        targetsChip.isHidden = false
+        fuelChip.isHidden = false
 
         if !isUnlocked {
-            applyLockedStyle(level: level, asteroids: asteroids, fuelPercent: fuelPercent)
+            applyLockedStyle(level: level)
             return
         }
 
+        numberLabel.font = .systemFont(ofSize: 52, weight: .black)
         cardView.alpha = 1
         numberLabel.textColor = GameStyle.textPrimary
 
@@ -197,13 +218,17 @@ final class LevelMissionCell: UICollectionViewCell {
         }
     }
 
-    private func applyLockedStyle(level: Int, asteroids: Int, fuelPercent: Int) {
+    private func applyLockedStyle(level: Int) {
         let previousMission = max(1, level - 1)
         unlockRequirementLabel.text = "Complete Mission \(String(format: "%02d", previousMission))"
+        unlockCaptionLabel.isHidden = level == 1
+        objectivesCaptionLabel.isHidden = false
+
         if level == 1 {
             unlockRequirementLabel.text = "Available from the start"
-            unlockCaptionLabel.isHidden = true
         }
+
+        numberLabel.font = .systemFont(ofSize: 44, weight: .black)
 
         statusBadge.isHidden = false
         statusBadge.text = "  LOCKED  "
@@ -220,10 +245,11 @@ final class LevelMissionCell: UICollectionViewCell {
         cardView.layer.borderColor = GameStyle.borderSteel.withAlphaComponent(0.45).cgColor
         accentStripe.backgroundColor = GameStyle.borderSteel.withAlphaComponent(0.55)
         glowView.isHidden = true
-        cardView.alpha = 0.94
+        shadowWrapper.alpha = 0.94
     }
 
     private func applyCurrentStyle() {
+        shadowWrapper.alpha = 1
         missionTag.textColor = GameStyle.gaugeAmber
         statusBadge.isHidden = false
         statusBadge.text = "  READY  "
@@ -236,11 +262,12 @@ final class LevelMissionCell: UICollectionViewCell {
         ]
         accentStripe.backgroundColor = GameStyle.accentRedBright
         cardView.layer.borderColor = GameStyle.accentRedBright.withAlphaComponent(0.85).cgColor
-        glowView.backgroundColor = GameStyle.accentRed.withAlphaComponent(0.35)
+        glowView.backgroundColor = GameStyle.accentRed.withAlphaComponent(0.28)
         glowView.isHidden = false
     }
 
     private func applyCompletedStyle() {
+        shadowWrapper.alpha = 1
         missionTag.textColor = GameStyle.gaugeAmber
         statusBadge.isHidden = false
         statusBadge.text = "  CLEAR  "
@@ -257,6 +284,7 @@ final class LevelMissionCell: UICollectionViewCell {
     }
 
     private func applyOpenStyle() {
+        shadowWrapper.alpha = 1
         missionTag.textColor = GameStyle.gaugeAmber
         statusBadge.isHidden = false
         statusBadge.text = "  OPEN  "

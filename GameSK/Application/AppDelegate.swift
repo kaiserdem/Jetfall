@@ -1,9 +1,3 @@
-//
-//  AppDelegate.swift
-//  GameSK
-//
-//  Created by Yaroslav Golinskiy on 12/06/2026.
-//
 
 import UIKit
 

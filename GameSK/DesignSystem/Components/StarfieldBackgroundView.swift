@@ -44,7 +44,7 @@ enum StarfieldBackgroundStyle {
 
     var textureSeed: UInt64 {
         switch self {
-        case .menu: return 41
+        case .menu: return 42
         case .missions: return 77
         case .hangarShop: return 129
         }
@@ -212,16 +212,143 @@ final class StarfieldBackgroundView: UIView {
             style.spaceColor.setFill()
             context.fill(CGRect(x: 0, y: 0, width: size, height: size))
 
-            for _ in 0..<style.starCount {
-                drawStar(
-                    in: context,
-                    x: CGFloat.random(in: 0...CGFloat(size), using: &rng),
-                    y: CGFloat.random(in: 0...CGFloat(size), using: &rng),
-                    radius: CGFloat.random(in: style.minStarRadius...style.maxStarRadius, using: &rng),
-                    color: starColor(for: style, using: &rng),
-                    canvasSize: CGFloat(size)
-                )
+            if style == .menu {
+                drawMenuStars(in: context, canvasSize: CGFloat(size), rng: &rng)
+            } else {
+                for _ in 0..<style.starCount {
+                    drawStar(
+                        in: context,
+                        x: CGFloat.random(in: 0...CGFloat(size), using: &rng),
+                        y: CGFloat.random(in: 0...CGFloat(size), using: &rng),
+                        radius: CGFloat.random(in: style.minStarRadius...style.maxStarRadius, using: &rng),
+                        color: starColor(for: style, using: &rng),
+                        canvasSize: CGFloat(size)
+                    )
+                }
             }
+        }
+    }
+
+    private static func drawMenuStars(
+        in context: CGContext,
+        canvasSize: CGFloat,
+        rng: inout StarfieldSeededRNG
+    ) {
+        for _ in 0..<880 {
+            drawStar(
+                in: context,
+                x: CGFloat.random(in: 0...canvasSize, using: &rng),
+                y: CGFloat.random(in: 0...canvasSize, using: &rng),
+                radius: CGFloat.random(in: 0.65...1.5, using: &rng),
+                color: menuStarColor(accent: false, using: &rng),
+                canvasSize: canvasSize
+            )
+        }
+
+        for _ in 0..<110 {
+            drawStar(
+                in: context,
+                x: CGFloat.random(in: 0...canvasSize, using: &rng),
+                y: CGFloat.random(in: 0...canvasSize, using: &rng),
+                radius: CGFloat.random(in: 1.8...2.8, using: &rng),
+                color: menuStarColor(accent: false, using: &rng),
+                canvasSize: canvasSize
+            )
+        }
+
+        for _ in 0..<34 {
+            let radius = CGFloat.random(in: 3.4...5.8, using: &rng)
+            let color = menuStarColor(accent: true, using: &rng)
+            let x = CGFloat.random(in: 0...canvasSize, using: &rng)
+            let y = CGFloat.random(in: 0...canvasSize, using: &rng)
+            drawStarGlow(
+                in: context,
+                x: x,
+                y: y,
+                radius: radius,
+                color: color,
+                canvasSize: canvasSize
+            )
+            drawStar(
+                in: context,
+                x: x,
+                y: y,
+                radius: radius,
+                color: color,
+                canvasSize: canvasSize
+            )
+        }
+    }
+
+    private static func drawStarGlow(
+        in context: CGContext,
+        x: CGFloat,
+        y: CGFloat,
+        radius: CGFloat,
+        color: UIColor,
+        canvasSize: CGFloat
+    ) {
+        let glowRadius = radius * 2.1
+        let glowColor = color.withAlphaComponent(0.22)
+        drawStar(
+            in: context,
+            x: x,
+            y: y,
+            radius: glowRadius,
+            color: glowColor,
+            canvasSize: canvasSize
+        )
+    }
+
+    private static func menuStarColor(accent: Bool, using rng: inout StarfieldSeededRNG) -> UIColor {
+        let roll = Int.random(in: 0..<100, using: &rng)
+
+        if accent {
+            switch roll {
+            case 0..<28:
+                return UIColor(red: 0.95, green: 0.72, blue: 0.18, alpha: 1)
+            case 28..<48:
+                return UIColor(red: 0.92, green: 0.28, blue: 0.20, alpha: 1)
+            case 48..<68:
+                return UIColor(red: 0.55, green: 0.82, blue: 1.0, alpha: 1)
+            case 68..<84:
+                return UIColor(red: 0.45, green: 0.90, blue: 0.72, alpha: 1)
+            default:
+                return UIColor(red: 0.88, green: 0.88, blue: 1.0, alpha: 1)
+            }
+        }
+
+        switch roll {
+        case 0..<42:
+            return UIColor(white: CGFloat.random(in: 0.82...1, using: &rng), alpha: 1)
+        case 42..<62:
+            return UIColor(
+                red: CGFloat.random(in: 0.92...1, using: &rng),
+                green: CGFloat.random(in: 0.74...0.9, using: &rng),
+                blue: CGFloat.random(in: 0.35...0.58, using: &rng),
+                alpha: 1
+            )
+        case 62..<78:
+            return UIColor(
+                red: CGFloat.random(in: 0.62...0.82, using: &rng),
+                green: CGFloat.random(in: 0.78...0.95, using: &rng),
+                blue: 1,
+                alpha: 1
+            )
+        case 78..<90:
+            return UIColor(
+                red: 1,
+                green: CGFloat.random(in: 0.62...0.78, using: &rng),
+                blue: CGFloat.random(in: 0.55...0.72, using: &rng),
+                alpha: 1
+            )
+        default:
+            return UIColor(
+                red: CGFloat.random(in: 0.55...0.75, using: &rng),
+                green: CGFloat.random(in: 0.88...1, using: &rng),
+                blue: CGFloat.random(in: 0.82...0.98, using: &rng),
+                alpha: 1
+            )
         }
     }
 
