@@ -5,6 +5,7 @@ final class MenuViewController: UIViewController {
     private var starfieldView: StarfieldBackgroundView?
     private let titleLabel = UILabel()
     private let missionsButton = UIButton(type: .system)
+    private let shopButton = UIButton(type: .system)
     private let activityIndicator = UIActivityIndicatorView(style: .medium)
 
     override func viewDidLoad() {
@@ -12,6 +13,7 @@ final class MenuViewController: UIViewController {
         view.backgroundColor = GameStyle.cockpitBlack
         setupTitle()
         setupMissionsButton()
+        setupShopButton()
         setupActivityIndicator()
     }
 
@@ -54,6 +56,19 @@ final class MenuViewController: UIViewController {
         ])
     }
 
+    private func setupShopButton() {
+        shopButton.translatesAutoresizingMaskIntoConstraints = false
+        GameStyle.applySecondaryButton(shopButton, title: "Hangar Shop")
+        shopButton.addTarget(self, action: #selector(shopTapped), for: .touchUpInside)
+        view.addSubview(shopButton)
+        NSLayoutConstraint.activate([
+            shopButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            shopButton.topAnchor.constraint(equalTo: missionsButton.bottomAnchor, constant: 14),
+            shopButton.leadingAnchor.constraint(equalTo: missionsButton.leadingAnchor),
+            shopButton.trailingAnchor.constraint(equalTo: missionsButton.trailingAnchor)
+        ])
+    }
+
     private func setupActivityIndicator() {
         activityIndicator.translatesAutoresizingMaskIntoConstraints = false
         activityIndicator.color = GameStyle.textPrimary
@@ -90,6 +105,19 @@ final class MenuViewController: UIViewController {
         missionsButton.isEnabled = true
         activityIndicator.stopAnimating()
         missionsButton.setTitle("Missions", for: .normal)
+    }
+
+    @objc private func shopTapped() {
+        GameAssetLoader.shared.whenReady { [weak self] in
+            self?.presentHangarShop()
+        }
+    }
+
+    private func presentHangarShop() {
+        let shop = HangarShopViewController()
+        shop.modalPresentationStyle = .fullScreen
+        shop.modalTransitionStyle = .crossDissolve
+        present(shop, animated: true)
     }
 
     @objc private func missionsTapped() {

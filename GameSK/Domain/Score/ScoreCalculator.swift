@@ -9,7 +9,7 @@ struct ScoreCalculator {
     }
 
     var pointsPerKill: Int {
-        Int(round(100.0 * levelMultiplier))
+        Int(round(33.0 * levelMultiplier))
     }
 
     func fuelBonus(killPoints: Int, fuelRemaining: TimeInterval, fuelTotal: TimeInterval) -> Int {

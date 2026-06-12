@@ -123,8 +123,8 @@ final class MissionResultView: UIView {
             panel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -28),
 
             accentStripe.topAnchor.constraint(equalTo: panel.topAnchor, constant: 16),
-            accentStripe.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 16),
-            accentStripe.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -16),
+            accentStripe.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 12),
+            accentStripe.bottomAnchor.constraint(equalTo: scoreChip.bottomAnchor, constant: 8),
             accentStripe.widthAnchor.constraint(equalToConstant: 4),
 
             iconContainer.topAnchor.constraint(equalTo: panel.topAnchor, constant: 22),
@@ -158,8 +158,8 @@ final class MissionResultView: UIView {
             scoreValueLabel.bottomAnchor.constraint(equalTo: scoreChip.bottomAnchor, constant: -8),
 
             primaryButton.topAnchor.constraint(equalTo: scoreChip.bottomAnchor, constant: 20),
-            primaryButton.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 20),
-            primaryButton.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -20),
+            primaryButton.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 28),
+            primaryButton.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -28),
 
             secondaryButton.topAnchor.constraint(equalTo: primaryButton.bottomAnchor, constant: 10),
             secondaryButton.leadingAnchor.constraint(equalTo: primaryButton.leadingAnchor),

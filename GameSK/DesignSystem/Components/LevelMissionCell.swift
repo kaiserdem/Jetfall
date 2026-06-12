@@ -7,7 +7,7 @@ final class LevelMissionCell: UICollectionViewCell {
     private let cardView = UIView()
     private let gradientLayer = CAGradientLayer()
     private let accentStripe = UIView()
-    private let glowLayer = CALayer()
+    private let glowView = UIView()
     private let missionTag = UILabel()
     private let numberLabel = UILabel()
     private let statusBadge = UILabel()
@@ -31,8 +31,6 @@ final class LevelMissionCell: UICollectionViewCell {
     override func layoutSubviews() {
         super.layoutSubviews()
         gradientLayer.frame = cardView.bounds
-        glowLayer.frame = cardView.bounds.insetBy(dx: -2, dy: -2)
-        glowLayer.cornerRadius = cardView.layer.cornerRadius + 2
     }
 
     override var isHighlighted: Bool {
@@ -61,9 +59,10 @@ final class LevelMissionCell: UICollectionViewCell {
         gradientLayer.endPoint = CGPoint(x: 1, y: 1)
         cardView.layer.insertSublayer(gradientLayer, at: 0)
 
-        glowLayer.cornerRadius = 18
-        glowLayer.opacity = 0
-        contentView.layer.insertSublayer(glowLayer, below: cardView.layer)
+        glowView.translatesAutoresizingMaskIntoConstraints = false
+        glowView.layer.cornerRadius = 22
+        glowView.isUserInteractionEnabled = false
+        glowView.isHidden = true
 
         accentStripe.translatesAutoresizingMaskIntoConstraints = false
         accentStripe.layer.cornerRadius = 2
@@ -110,6 +109,7 @@ final class LevelMissionCell: UICollectionViewCell {
         fuelChip.translatesAutoresizingMaskIntoConstraints = false
 
         contentView.addSubview(cardView)
+        cardView.insertSubview(glowView, at: 0)
         cardView.addSubview(accentStripe)
         cardView.addSubview(missionTag)
         cardView.addSubview(numberLabel)
@@ -123,6 +123,11 @@ final class LevelMissionCell: UICollectionViewCell {
             cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
+
+            glowView.topAnchor.constraint(equalTo: cardView.topAnchor, constant: -3),
+            glowView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: -3),
+            glowView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: 3),
+            glowView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: 3),
 
             accentStripe.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 12),
             accentStripe.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 14),
@@ -214,7 +219,7 @@ final class LevelMissionCell: UICollectionViewCell {
         ]
         cardView.layer.borderColor = GameStyle.borderSteel.withAlphaComponent(0.45).cgColor
         accentStripe.backgroundColor = GameStyle.borderSteel.withAlphaComponent(0.55)
-        glowLayer.opacity = 0
+        glowView.isHidden = true
         cardView.alpha = 0.94
     }
 
@@ -231,8 +236,8 @@ final class LevelMissionCell: UICollectionViewCell {
         ]
         accentStripe.backgroundColor = GameStyle.accentRedBright
         cardView.layer.borderColor = GameStyle.accentRedBright.withAlphaComponent(0.85).cgColor
-        glowLayer.backgroundColor = GameStyle.accentRed.withAlphaComponent(0.35).cgColor
-        glowLayer.opacity = 1
+        glowView.backgroundColor = GameStyle.accentRed.withAlphaComponent(0.35)
+        glowView.isHidden = false
     }
 
     private func applyCompletedStyle() {
@@ -248,7 +253,7 @@ final class LevelMissionCell: UICollectionViewCell {
         ]
         accentStripe.backgroundColor = UIColor(red: 0.25, green: 0.72, blue: 0.55, alpha: 1)
         cardView.layer.borderColor = UIColor(red: 0.25, green: 0.72, blue: 0.55, alpha: 0.5).cgColor
-        glowLayer.opacity = 0
+        glowView.isHidden = true
     }
 
     private func applyOpenStyle() {
@@ -264,11 +269,10 @@ final class LevelMissionCell: UICollectionViewCell {
         ]
         accentStripe.backgroundColor = GameStyle.gaugeAmber
         cardView.layer.borderColor = GameStyle.borderHighlight.cgColor
-        glowLayer.opacity = 0
+        glowView.isHidden = true
     }
 
     func applyCarouselPresentation(scale: CGFloat, alpha: CGFloat) {
-        cardView.transform = CGAffineTransform(scaleX: scale, y: scale)
         contentView.alpha = alpha
     }
 }

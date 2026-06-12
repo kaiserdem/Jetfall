@@ -81,7 +81,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             self?.dismiss(animated: true)
         }
         pauseMenuView.onShop = { [weak self] in
-            self?.showShopPlaceholder()
+            self?.presentHangarShop()
         }
     }
 
@@ -210,14 +210,11 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         fireButtonView.alpha = enabled ? 1 : 0.45
     }
 
-    private func showShopPlaceholder() {
-        let alert = UIAlertController(
-            title: "Shop",
-            message: "The hangar shop is coming soon.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
+    private func presentHangarShop() {
+        let shop = HangarShopViewController()
+        shop.modalPresentationStyle = .fullScreen
+        shop.modalTransitionStyle = .crossDissolve
+        present(shop, animated: true)
     }
 
     private func presentMissionResult(_ result: MissionResultView.Result) {
