@@ -9,6 +9,7 @@ final class MenuViewController: UIViewController {
     private let continueButton = UIButton(type: .system)
     private let shopButton = UIButton(type: .system)
     private let activityIndicator = UIActivityIndicatorView(style: .medium)
+    private let bootOverlay = BootLoadingOverlayView()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -16,6 +17,8 @@ final class MenuViewController: UIViewController {
         setupContentStack()
         setupButtons()
         setupActivityIndicator()
+        setupBootOverlay()
+        beginBootSequence()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -25,13 +28,6 @@ final class MenuViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        GameAssetLoader.shared.beginPreloadingIfNeeded()
-        GameAssetLoader.shared.whenReady { [weak self] in
-            Plane3DFactory.prepareFlightPlane()
-            self?.showStarfieldIfNeeded()
-            self?.aircraftPreview.startAnimating()
-            self?.updateContinueButtonState()
-        }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -86,6 +82,42 @@ final class MenuViewController: UIViewController {
             activityIndicator.centerXAnchor.constraint(equalTo: continueButton.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: continueButton.centerYAnchor)
         ])
+    }
+
+    private func setupBootOverlay() {
+        bootOverlay.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(bootOverlay)
+        NSLayoutConstraint.activate([
+            bootOverlay.topAnchor.constraint(equalTo: view.topAnchor),
+            bootOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bootOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bootOverlay.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+    }
+
+    private func beginBootSequence() {
+        contentStack.alpha = 0
+        bootOverlay.alpha = 1
+        bootOverlay.isHidden = false
+        bootOverlay.startAnimating()
+
+        GameAssetLoader.shared.onProgress = { [weak self] progress in
+            self?.bootOverlay.updateProgress(progress)
+        }
+
+        GameAssetLoader.shared.whenReady { [weak self] in
+            guard let self else { return }
+            self.bootOverlay.complete { [weak self] in
+                guard let self else { return }
+                Plane3DFactory.prepareFlightPlane()
+                self.showStarfieldIfNeeded()
+                self.aircraftPreview.startAnimating()
+                self.updateContinueButtonState()
+                UIView.animate(withDuration: 0.3) {
+                    self.contentStack.alpha = 1
+                }
+            }
+        }
     }
 
     private func refreshDashboard() {

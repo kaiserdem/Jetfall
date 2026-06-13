@@ -10,6 +10,18 @@ final class GameAssetLoader {
     private var readyHandlers: [() -> Void] = []
     private let lock = NSLock()
 
+    var onProgress: ((CGFloat) -> Void)? {
+        didSet {
+            guard let onProgress else { return }
+            lock.lock()
+            let current = isReady ? CGFloat(1) : CGFloat(0)
+            lock.unlock()
+            if current > 0 {
+                DispatchQueue.main.async { onProgress(current) }
+            }
+        }
+    }
+
     private init() {}
 
     func beginPreloadingIfNeeded() {
@@ -22,12 +34,20 @@ final class GameAssetLoader {
         lock.unlock()
 
         DispatchQueue.global(qos: .userInitiated).async {
+            self.reportProgress(0.22)
             let starsImage = WorldBuilder3D.buildStarsTextureImage()
+
+            self.reportProgress(0.48)
             Plane3DFactory.prepareFlightPlane()
+
+            self.reportProgress(0.74)
             AsteroidFactory.prepareTemplate()
+
+            self.reportProgress(0.9)
 
             DispatchQueue.main.async {
                 WorldBuilder3D.installStarsTexture(starsImage)
+                self.reportProgress(1)
                 self.finishLoading()
             }
         }
@@ -53,5 +73,12 @@ final class GameAssetLoader {
         readyHandlers = []
         lock.unlock()
         handlers.forEach { $0() }
+    }
+
+    private func reportProgress(_ value: CGFloat) {
+        let clamped = max(0, min(1, value))
+        DispatchQueue.main.async {
+            self.onProgress?(clamped)
+        }
     }
 }

@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="launch-vc">
+    <device id="retina6_12" orientation="portrait" appearance="dark"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Launch Screen-->
+        <scene sceneID="launch-scene">
+            <objects>
+                <viewController id="launch-vc" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="launch-view">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-01">
+                                <rect key="frame" x="20" y="72" width="3" height="3"/>
+                                <color key="backgroundColor" name="LaunchAmber"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="3" id="st01-w"/>
+                                    <constraint firstAttribute="height" constant="3" id="st01-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-02">
+                                <rect key="frame" x="352" y="88" width="2" height="2"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st02-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st02-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-03">
+                                <rect key="frame" x="64" y="108" width="2" height="2"/>
+                                <color key="backgroundColor" white="0.69999999999999996" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st03-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st03-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-04">
+                                <rect key="frame" x="300" y="124" width="4" height="4"/>
+                                <color key="backgroundColor" name="LaunchAmber"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="4" id="st04-w"/>
+                                    <constraint firstAttribute="height" constant="4" id="st04-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-05">
+                                <rect key="frame" x="120" y="56" width="2" height="2"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st05-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st05-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-06">
+                                <rect key="frame" x="248" y="64" width="3" height="3"/>
+                                <color key="backgroundColor" name="LaunchAmber"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="3" id="st06-w"/>
+                                    <constraint firstAttribute="height" constant="3" id="st06-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-07">
+                                <rect key="frame" x="188" y="40" width="2" height="2"/>
+                                <color key="backgroundColor" white="1" alpha="0.69999999999999996" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st07-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st07-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-08">
+                                <rect key="frame" x="16" y="200" width="2" height="2"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st08-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st08-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-09">
+                                <rect key="frame" x="360" y="220" width="3" height="3"/>
+                                <color key="backgroundColor" name="LaunchAmber"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="3" id="st09-w"/>
+                                    <constraint firstAttribute="height" constant="3" id="st09-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-10">
+                                <rect key="frame" x="40" y="340" width="5" height="5"/>
+                                <color key="backgroundColor" name="LaunchAmber"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="5" id="st10-w"/>
+                                    <constraint firstAttribute="height" constant="5" id="st10-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-11">
+                                <rect key="frame" x="328" y="360" width="2" height="2"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st11-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st11-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-12">
+                                <rect key="frame" x="24" y="480" width="3" height="3"/>
+                                <color key="backgroundColor" name="LaunchAmber"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="3" id="st12-w"/>
+                                    <constraint firstAttribute="height" constant="3" id="st12-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-13">
+                                <rect key="frame" x="348" y="500" width="2" height="2"/>
+                                <color key="backgroundColor" white="0.80000000000000004" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st13-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st13-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-14">
+                                <rect key="frame" x="80" y="620" width="2" height="2"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st14-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st14-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-15">
+                                <rect key="frame" x="300" y="640" width="4" height="4"/>
+                                <color key="backgroundColor" name="LaunchAmber"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="4" id="st15-w"/>
+                                    <constraint firstAttribute="height" constant="4" id="st15-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-16">
+                                <rect key="frame" x="48" y="740" width="3" height="3"/>
+                                <color key="backgroundColor" name="LaunchAmber"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="3" id="st16-w"/>
+                                    <constraint firstAttribute="height" constant="3" id="st16-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-17">
+                                <rect key="frame" x="320" y="760" width="2" height="2"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st17-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st17-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-18">
+                                <rect key="frame" x="168" y="780" width="2" height="2"/>
+                                <color key="backgroundColor" white="0.69999999999999996" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st18-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st18-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-19">
+                                <rect key="frame" x="260" y="800" width="3" height="3"/>
+                                <color key="backgroundColor" name="LaunchAmber"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="3" id="st19-w"/>
+                                    <constraint firstAttribute="height" constant="3" id="st19-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="star-20">
+                                <rect key="frame" x="196" y="120" width="2" height="2"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="2" id="st20-w"/>
+                                    <constraint firstAttribute="height" constant="2" id="st20-h"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="hud-root">
+                                <rect key="frame" x="111.66666666666669" y="341" width="170" height="170"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="frame-outer-top">
+                                        <rect key="frame" x="13" y="13" width="144" height="2"/>
+                                        <color key="backgroundColor" name="LaunchAmber"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="2" id="fot-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="frame-outer-bottom">
+                                        <rect key="frame" x="13" y="155" width="144" height="2"/>
+                                        <color key="backgroundColor" name="LaunchAmber"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="2" id="fob-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="frame-outer-left">
+                                        <rect key="frame" x="13" y="13" width="2" height="144"/>
+                                        <color key="backgroundColor" name="LaunchAmber"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="2" id="fol-w"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="frame-outer-right">
+                                        <rect key="frame" x="155" y="13" width="2" height="144"/>
+                                        <color key="backgroundColor" name="LaunchAmber"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="2" id="for-w"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="frame-inner-top">
+                                        <rect key="frame" x="39" y="39" width="92" height="1"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="1" id="fit-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="frame-inner-bottom">
+                                        <rect key="frame" x="39" y="130" width="92" height="1"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="1" id="fib-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="frame-inner-left">
+                                        <rect key="frame" x="39" y="39" width="1" height="92"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="1" id="fil-w"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="frame-inner-right">
+                                        <rect key="frame" x="130" y="39" width="1" height="92"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="1" id="fir-w"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="glow-panel">
+                                        <rect key="frame" x="48" y="48" width="74" height="74"/>
+                                        <color key="backgroundColor" name="LaunchPanel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="46" id="gp-w"/>
+                                            <constraint firstAttribute="height" constant="46" id="gp-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="accent-stripe">
+                                        <rect key="frame" x="0.0" y="33" width="3" height="104"/>
+                                        <color key="backgroundColor" name="LaunchAccentRed"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="3" id="as-w"/>
+                                            <constraint firstAttribute="height" constant="66" id="as-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="cross-v">
+                                        <rect key="frame" x="84" y="53" width="2" height="64"/>
+                                        <color key="backgroundColor" name="LaunchAccentRed"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="2" id="cv-w"/>
+                                            <constraint firstAttribute="height" constant="40" id="cv-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="cross-h">
+                                        <rect key="frame" x="53" y="84" width="64" height="2"/>
+                                        <color key="backgroundColor" name="LaunchAmber"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="40" id="ch-w"/>
+                                            <constraint firstAttribute="height" constant="2" id="ch-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="cross-dot">
+                                        <rect key="frame" x="83" y="83" width="4" height="4"/>
+                                        <color key="backgroundColor" name="LaunchAccentRed"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="4" id="cd-w"/>
+                                            <constraint firstAttribute="height" constant="4" id="cd-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="corner-tl-h">
+                                        <rect key="frame" x="5" y="5" width="16" height="2"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="2" id="ctlh-h"/>
+                                            <constraint firstAttribute="width" constant="16" id="ctlh-w"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="corner-tl-v">
+                                        <rect key="frame" x="5" y="5" width="2" height="16"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="2" id="ctlv-w"/>
+                                            <constraint firstAttribute="height" constant="16" id="ctlv-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="corner-tr-h">
+                                        <rect key="frame" x="149" y="5" width="16" height="2"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="2" id="ctrh-h"/>
+                                            <constraint firstAttribute="width" constant="16" id="ctrh-w"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="corner-tr-v">
+                                        <rect key="frame" x="163" y="5" width="2" height="16"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="2" id="ctrv-w"/>
+                                            <constraint firstAttribute="height" constant="16" id="ctrv-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="corner-bl-h">
+                                        <rect key="frame" x="5" y="163" width="16" height="2"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="2" id="cblh-h"/>
+                                            <constraint firstAttribute="width" constant="16" id="cblh-w"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="corner-bl-v">
+                                        <rect key="frame" x="5" y="149" width="2" height="16"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="2" id="cblv-w"/>
+                                            <constraint firstAttribute="height" constant="16" id="cblv-h"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="corner-br-h">
+                                        <rect key="frame" x="149" y="163" width="16" height="2"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="2" id="cbrh-h"/>
+                                            <constraint firstAttribute="width" constant="16" id="cbrh-w"/>
+                                        </constraints>
+                                    </view>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="corner-br-v">
+                                        <rect key="frame" x="163" y="149" width="2" height="16"/>
+                                        <color key="backgroundColor" name="LaunchSteel"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="2" id="cbrv-w"/>
+                                            <constraint firstAttribute="height" constant="16" id="cbrv-h"/>
+                                        </constraints>
+                                    </view>
+                                </subviews>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="108" id="hr-w"/>
+                                    <constraint firstAttribute="height" constant="108" id="hr-h"/>
+                                    <constraint firstItem="glow-panel" firstAttribute="centerX" secondItem="hud-root" secondAttribute="centerX" id="gp-cx"/>
+                                    <constraint firstItem="glow-panel" firstAttribute="centerY" secondItem="hud-root" secondAttribute="centerY" id="gp-cy"/>
+                                    <constraint firstItem="frame-outer-top" firstAttribute="top" secondItem="hud-root" secondAttribute="top" constant="8" id="fot-t"/>
+                                    <constraint firstItem="frame-outer-top" firstAttribute="leading" secondItem="hud-root" secondAttribute="leading" constant="8" id="fot-l"/>
+                                    <constraint firstItem="frame-outer-top" firstAttribute="trailing" secondItem="hud-root" secondAttribute="trailing" constant="-8" id="fot-r"/>
+                                    <constraint firstItem="frame-outer-bottom" firstAttribute="bottom" secondItem="hud-root" secondAttribute="bottom" constant="-8" id="fob-b"/>
+                                    <constraint firstItem="frame-outer-bottom" firstAttribute="leading" secondItem="frame-outer-top" secondAttribute="leading" id="fob-l"/>
+                                    <constraint firstItem="frame-outer-bottom" firstAttribute="trailing" secondItem="frame-outer-top" secondAttribute="trailing" id="fob-r"/>
+                                    <constraint firstItem="frame-outer-left" firstAttribute="top" secondItem="frame-outer-top" secondAttribute="top" id="fol-t"/>
+                                    <constraint firstItem="frame-outer-left" firstAttribute="leading" secondItem="frame-outer-top" secondAttribute="leading" id="fol-l"/>
+                                    <constraint firstItem="frame-outer-left" firstAttribute="bottom" secondItem="frame-outer-bottom" secondAttribute="top" id="fol-b"/>
+                                    <constraint firstItem="frame-outer-right" firstAttribute="top" secondItem="frame-outer-top" secondAttribute="top" id="for-t"/>
+                                    <constraint firstItem="frame-outer-right" firstAttribute="trailing" secondItem="frame-outer-top" secondAttribute="trailing" id="for-r"/>
+                                    <constraint firstItem="frame-outer-right" firstAttribute="bottom" secondItem="frame-outer-bottom" secondAttribute="top" id="for-b"/>
+                                    <constraint firstItem="frame-inner-top" firstAttribute="top" secondItem="hud-root" secondAttribute="top" constant="25" id="fit-t"/>
+                                    <constraint firstItem="frame-inner-top" firstAttribute="leading" secondItem="hud-root" secondAttribute="leading" constant="25" id="fit-l"/>
+                                    <constraint firstItem="frame-inner-top" firstAttribute="trailing" secondItem="hud-root" secondAttribute="trailing" constant="-25" id="fit-r"/>
+                                    <constraint firstItem="frame-inner-bottom" firstAttribute="bottom" secondItem="hud-root" secondAttribute="bottom" constant="-25" id="fib-b"/>
+                                    <constraint firstItem="frame-inner-bottom" firstAttribute="leading" secondItem="frame-inner-top" secondAttribute="leading" id="fib-l"/>
+                                    <constraint firstItem="frame-inner-bottom" firstAttribute="trailing" secondItem="frame-inner-top" secondAttribute="trailing" id="fib-r"/>
+                                    <constraint firstItem="frame-inner-left" firstAttribute="top" secondItem="frame-inner-top" secondAttribute="top" id="fil-t"/>
+                                    <constraint firstItem="frame-inner-left" firstAttribute="leading" secondItem="frame-inner-top" secondAttribute="leading" id="fil-l"/>
+                                    <constraint firstItem="frame-inner-left" firstAttribute="bottom" secondItem="frame-inner-bottom" secondAttribute="top" id="fil-b"/>
+                                    <constraint firstItem="frame-inner-right" firstAttribute="top" secondItem="frame-inner-top" secondAttribute="top" id="fir-t"/>
+                                    <constraint firstItem="frame-inner-right" firstAttribute="trailing" secondItem="frame-inner-top" secondAttribute="trailing" id="fir-r"/>
+                                    <constraint firstItem="frame-inner-right" firstAttribute="bottom" secondItem="frame-inner-bottom" secondAttribute="top" id="fir-b"/>
+                                    <constraint firstItem="accent-stripe" firstAttribute="leading" secondItem="hud-root" secondAttribute="leading" id="as-l"/>
+                                    <constraint firstItem="accent-stripe" firstAttribute="centerY" secondItem="hud-root" secondAttribute="centerY" id="as-cy"/>
+                                    <constraint firstItem="cross-v" firstAttribute="centerX" secondItem="hud-root" secondAttribute="centerX" id="cv-cx"/>
+                                    <constraint firstItem="cross-v" firstAttribute="centerY" secondItem="hud-root" secondAttribute="centerY" id="cv-cy"/>
+                                    <constraint firstItem="cross-h" firstAttribute="centerX" secondItem="hud-root" secondAttribute="centerX" id="ch-cx"/>
+                                    <constraint firstItem="cross-h" firstAttribute="centerY" secondItem="hud-root" secondAttribute="centerY" id="ch-cy"/>
+                                    <constraint firstItem="cross-dot" firstAttribute="centerX" secondItem="hud-root" secondAttribute="centerX" id="cd-cx"/>
+                                    <constraint firstItem="cross-dot" firstAttribute="centerY" secondItem="hud-root" secondAttribute="centerY" id="cd-cy"/>
+                                    <constraint firstItem="corner-tl-h" firstAttribute="top" secondItem="hud-root" secondAttribute="top" constant="5" id="ctlh-t"/>
+                                    <constraint firstItem="corner-tl-h" firstAttribute="leading" secondItem="hud-root" secondAttribute="leading" constant="5" id="ctlh-l"/>
+                                    <constraint firstItem="corner-tl-v" firstAttribute="top" secondItem="corner-tl-h" secondAttribute="top" id="ctlv-t"/>
+                                    <constraint firstItem="corner-tl-v" firstAttribute="leading" secondItem="corner-tl-h" secondAttribute="leading" id="ctlv-l"/>
+                                    <constraint firstItem="corner-tr-h" firstAttribute="top" secondItem="hud-root" secondAttribute="top" constant="5" id="ctrh-t"/>
+                                    <constraint firstItem="corner-tr-h" firstAttribute="trailing" secondItem="hud-root" secondAttribute="trailing" constant="-5" id="ctrh-r"/>
+                                    <constraint firstItem="corner-tr-v" firstAttribute="top" secondItem="corner-tr-h" secondAttribute="top" id="ctrv-t"/>
+                                    <constraint firstItem="corner-tr-v" firstAttribute="trailing" secondItem="corner-tr-h" secondAttribute="trailing" id="ctrv-r"/>
+                                    <constraint firstItem="corner-bl-h" firstAttribute="bottom" secondItem="hud-root" secondAttribute="bottom" constant="-5" id="cblh-b"/>
+                                    <constraint firstItem="corner-bl-h" firstAttribute="leading" secondItem="hud-root" secondAttribute="leading" constant="5" id="cblh-l"/>
+                                    <constraint firstItem="corner-bl-v" firstAttribute="bottom" secondItem="corner-bl-h" secondAttribute="bottom" id="cblv-b"/>
+                                    <constraint firstItem="corner-bl-v" firstAttribute="leading" secondItem="corner-bl-h" secondAttribute="leading" id="cblv-l"/>
+                                    <constraint firstItem="corner-br-h" firstAttribute="bottom" secondItem="hud-root" secondAttribute="bottom" constant="-5" id="cbrh-b"/>
+                                    <constraint firstItem="corner-br-h" firstAttribute="trailing" secondItem="hud-root" secondAttribute="trailing" constant="-5" id="cbrh-r"/>
+                                    <constraint firstItem="corner-br-v" firstAttribute="bottom" secondItem="corner-br-h" secondAttribute="bottom" id="cbrv-b"/>
+                                    <constraint firstItem="corner-br-v" firstAttribute="trailing" secondItem="corner-br-h" secondAttribute="trailing" id="cbrv-r"/>
+                                </constraints>
+                            </view>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="progress-track">
+                                <rect key="frame" x="86.666666666666686" y="464" width="220" height="8"/>
+                                <subviews>
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="progress-fill">
+                                        <rect key="frame" x="1" y="1" width="96" height="6"/>
+                                        <color key="backgroundColor" name="LaunchAccentRed"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="96" id="pf-w"/>
+                                            <constraint firstAttribute="height" constant="6" id="pf-h"/>
+                                        </constraints>
+                                    </view>
+                                </subviews>
+                                <color key="backgroundColor" name="LaunchPanel"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="220" id="pt-w"/>
+                                    <constraint firstAttribute="height" constant="8" id="pt-h"/>
+                                    <constraint firstItem="progress-fill" firstAttribute="leading" secondItem="progress-track" secondAttribute="leading" constant="1" id="pf-l"/>
+                                    <constraint firstItem="progress-fill" firstAttribute="top" secondItem="progress-track" secondAttribute="top" constant="1" id="pf-t"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="launch-safe"/>
+                        <color key="backgroundColor" name="LaunchBackground"/>
+                        <constraints>
+                            <constraint firstItem="hud-root" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" id="hr-cx"/>
+                            <constraint firstItem="hud-root" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" constant="-28" id="hr-cy"/>
+                            <constraint firstItem="progress-track" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" id="pt-cx"/>
+                            <constraint firstItem="progress-track" firstAttribute="top" secondItem="hud-root" secondAttribute="bottom" constant="24" id="pt-t"/>
+                            <constraint firstItem="star-01" firstAttribute="leading" secondItem="launch-view" secondAttribute="leading" constant="20" id="c01-l"/>
+                            <constraint firstItem="star-01" firstAttribute="top" secondItem="launch-safe" secondAttribute="top" constant="28" id="c01-t"/>
+                            <constraint firstItem="star-02" firstAttribute="trailing" secondItem="launch-view" secondAttribute="trailing" constant="-20" id="c02-r"/>
+                            <constraint firstItem="star-02" firstAttribute="top" secondItem="launch-safe" secondAttribute="top" constant="44" id="c02-t"/>
+                            <constraint firstItem="star-03" firstAttribute="leading" secondItem="launch-view" secondAttribute="leading" constant="64" id="c03-l"/>
+                            <constraint firstItem="star-03" firstAttribute="top" secondItem="launch-safe" secondAttribute="top" constant="64" id="c03-t"/>
+                            <constraint firstItem="star-04" firstAttribute="trailing" secondItem="launch-view" secondAttribute="trailing" constant="-72" id="c04-r"/>
+                            <constraint firstItem="star-04" firstAttribute="top" secondItem="launch-safe" secondAttribute="top" constant="80" id="c04-t"/>
+                            <constraint firstItem="star-05" firstAttribute="leading" secondItem="launch-view" secondAttribute="leading" constant="120" id="c05-l"/>
+                            <constraint firstItem="star-05" firstAttribute="top" secondItem="launch-safe" secondAttribute="top" constant="12" id="c05-t"/>
+                            <constraint firstItem="star-06" firstAttribute="trailing" secondItem="launch-view" secondAttribute="trailing" constant="-124" id="c06-r"/>
+                            <constraint firstItem="star-06" firstAttribute="top" secondItem="launch-safe" secondAttribute="top" constant="20" id="c06-t"/>
+                            <constraint firstItem="star-07" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" constant="-8" id="c07-cx"/>
+                            <constraint firstItem="star-07" firstAttribute="top" secondItem="launch-view" secondAttribute="top" constant="40" id="c07-t"/>
+                            <constraint firstItem="star-08" firstAttribute="leading" secondItem="launch-view" secondAttribute="leading" constant="16" id="c08-l"/>
+                            <constraint firstItem="star-08" firstAttribute="top" secondItem="launch-safe" secondAttribute="top" constant="156" id="c08-t"/>
+                            <constraint firstItem="star-09" firstAttribute="trailing" secondItem="launch-view" secondAttribute="trailing" constant="-12" id="c09-r"/>
+                            <constraint firstItem="star-09" firstAttribute="top" secondItem="launch-safe" secondAttribute="top" constant="176" id="c09-t"/>
+                            <constraint firstItem="star-10" firstAttribute="leading" secondItem="launch-view" secondAttribute="leading" constant="40" id="c10-l"/>
+                            <constraint firstItem="star-10" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" constant="-86" id="c10-cy"/>
+                            <constraint firstItem="star-11" firstAttribute="trailing" secondItem="launch-view" secondAttribute="trailing" constant="-44" id="c11-r"/>
+                            <constraint firstItem="star-11" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" constant="-66" id="c11-cy"/>
+                            <constraint firstItem="star-12" firstAttribute="leading" secondItem="launch-view" secondAttribute="leading" constant="24" id="c12-l"/>
+                            <constraint firstItem="star-12" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" constant="54" id="c12-cy"/>
+                            <constraint firstItem="star-13" firstAttribute="trailing" secondItem="launch-view" secondAttribute="trailing" constant="-24" id="c13-r"/>
+                            <constraint firstItem="star-13" firstAttribute="centerY" secondItem="launch-view" secondAttribute="centerY" constant="74" id="c13-cy"/>
+                            <constraint firstItem="star-14" firstAttribute="leading" secondItem="launch-view" secondAttribute="leading" constant="80" id="c14-l"/>
+                            <constraint firstItem="launch-safe" firstAttribute="bottom" secondItem="star-14" secondAttribute="bottom" constant="196" id="c14-b"/>
+                            <constraint firstItem="star-15" firstAttribute="trailing" secondItem="launch-view" secondAttribute="trailing" constant="-68" id="c15-r"/>
+                            <constraint firstItem="launch-safe" firstAttribute="bottom" secondItem="star-15" secondAttribute="bottom" constant="176" id="c15-b"/>
+                            <constraint firstItem="star-16" firstAttribute="leading" secondItem="launch-view" secondAttribute="leading" constant="48" id="c16-l"/>
+                            <constraint firstItem="launch-safe" firstAttribute="bottom" secondItem="star-16" secondAttribute="bottom" constant="76" id="c16-b"/>
+                            <constraint firstItem="star-17" firstAttribute="trailing" secondItem="launch-view" secondAttribute="trailing" constant="-48" id="c17-r"/>
+                            <constraint firstItem="launch-safe" firstAttribute="bottom" secondItem="star-17" secondAttribute="bottom" constant="56" id="c17-b"/>
+                            <constraint firstItem="star-18" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" constant="-28" id="c18-cx"/>
+                            <constraint firstItem="launch-safe" firstAttribute="bottom" secondItem="star-18" secondAttribute="bottom" constant="36" id="c18-b"/>
+                            <constraint firstItem="star-19" firstAttribute="trailing" secondItem="launch-view" secondAttribute="trailing" constant="-108" id="c19-r"/>
+                            <constraint firstItem="launch-safe" firstAttribute="bottom" secondItem="star-19" secondAttribute="bottom" constant="16" id="c19-b"/>
+                            <constraint firstItem="star-20" firstAttribute="centerX" secondItem="launch-view" secondAttribute="centerX" id="c20-cx"/>
+                            <constraint firstItem="star-20" firstAttribute="top" secondItem="launch-safe" secondAttribute="top" constant="76" id="c20-t"/>
+                        </constraints>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="launch-responder" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="53" y="375"/>
+        </scene>
+    </scenes>
+    <resources>
+        <namedColor name="LaunchAccentRed">
+            <color red="0.92000000000000004" green="0.22" blue="0.16" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="LaunchAmber">
+            <color red="0.94999999999999996" green="0.72" blue="0.18" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="LaunchBackground">
+            <color red="0.040000000000000001" green="0.05" blue="0.07" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="LaunchPanel">
+            <color red="0.07" green="0.11" blue="0.2" alpha="0.96" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="LaunchSteel">
+            <color red="0.55000000000000004" green="0.55000000000000004" blue="0.55000000000000004" alpha="0.42" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
+</document>
