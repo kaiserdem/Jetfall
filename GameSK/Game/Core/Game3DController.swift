@@ -23,6 +23,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private var fireTimer: TimeInterval = 0
     private var currentBankAngle: Float = 0
     private var propellerAngle: Float = 0
+    private lazy var cometEffects = CometEffectController(parent: scene.rootNode)
 
     private var currentLevel = 1
     private var levelConfig = LevelConfigFactory.config(for: 1)
@@ -184,6 +185,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
         clearEnemies()
         clearBullets()
+        cometEffects.reset()
         spawnInitialAsteroids()
         notifyLevelProgress()
     }
@@ -280,6 +282,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         scrollWorld(delta: delta)
         updateBullets(delta: delta)
         updateFuel(delta: delta)
+        cometEffects.update(delta: delta, anchor: playerRoot.position)
 
         asteroidSpawnTimer += TimeInterval(delta)
         fireTimer += TimeInterval(delta)
