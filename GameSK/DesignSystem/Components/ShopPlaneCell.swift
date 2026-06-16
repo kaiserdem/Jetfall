@@ -238,11 +238,7 @@ final class ShopPlaneCell: UICollectionViewCell {
         super.layoutSubviews()
         gradientLayer.frame = cardView.bounds
 
-        guard previewContainer.bounds.width > 1, let plane = displayedPlane else { return }
-        if previewPlaneNode?.parent == nil {
-            configuredPlaneID = nil
-            setPreviewPlane(for: plane)
-        }
+        guard displayedPlane != nil else { return }
         sceneView.isPlaying = true
     }
 
