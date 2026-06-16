@@ -20,8 +20,8 @@ enum AsteroidFactory {
         return asteroid
     }
 
-    private static let minSpawnDistance: Float = 150
-    private static let maxSpawnDistance: Float = 340
+    private static let minSpawnDistance: Float = 200
+    private static let maxSpawnDistance: Float = 450
     private static let cameraVerticalFOV: Float = 58 * .pi / 180
     private static let screenAspect: Float = 9.0 / 19.5
 
@@ -61,7 +61,7 @@ enum AsteroidFactory {
     }
 
     static func initialSpawnDistances() -> [Float] {
-        [170, 200, 230, 260, 290, 320]
+        [230, 270, 310, 350, 390, 430]
     }
 
     private static func isSeparated(
