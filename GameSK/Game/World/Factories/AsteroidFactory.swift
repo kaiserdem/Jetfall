@@ -3,17 +3,31 @@ import UIKit
 
 enum AsteroidFactory {
 
-    private static var template: SCNNode?
+    private static var templates: [String: SCNNode] = [:]
+
+    private static let asteroidResourceNames = ["asteroid1", "asteroid2"]
+    private static let targetSpan: Float = 2.4
 
     static func prepareTemplate() {
-        if template == nil {
-            template = loadTemplate()
+        for resourceName in asteroidResourceNames where templates[resourceName] == nil {
+            if let template = loadTemplate(named: resourceName) {
+                templates[resourceName] = template
+            } else {
+                #if DEBUG
+                print("[AsteroidFactory] Failed to load \(resourceName).usdz")
+                #endif
+            }
         }
     }
 
     static func makeAsteroid() -> SCNNode? {
         prepareTemplate()
-        guard let template else { return nil }
+
+        let availableNames = asteroidResourceNames.filter { templates[$0] != nil }
+        guard let resourceName = availableNames.randomElement(),
+              let template = templates[resourceName] else {
+            return nil
+        }
 
         let asteroid = template.clone()
         asteroid.name = "enemy"
@@ -103,8 +117,8 @@ enum AsteroidFactory {
         return true
     }
 
-    private static func loadTemplate() -> SCNNode? {
-        guard let url = Bundle.main.url(forResource: "Asteroid", withExtension: "usdz"),
+    private static func loadTemplate(named resourceName: String) -> SCNNode? {
+        guard let url = Bundle.main.url(forResource: resourceName, withExtension: "usdz"),
               let scene = try? SCNScene(url: url, options: [.convertToYUp: true]) else {
             return nil
         }
@@ -117,20 +131,43 @@ enum AsteroidFactory {
         let wrapper = SCNNode()
         wrapper.addChildNode(source)
         centerNode(source)
-        normalizeScale(of: wrapper, targetSpan: 2.4)
+        normalizeScale(of: wrapper, targetSpan: targetSpan)
 
         #if DEBUG
-        print("[AsteroidFactory] Asteroid.usdz loaded")
+        print("[AsteroidFactory] \(resourceName).usdz loaded")
         #endif
 
         return wrapper
     }
 
     private static func findModelNode(in scene: SCNScene) -> SCNNode {
+        let preferredNames = ["Meshes", "Sketchfab_model", "GLTF_SceneRootNode"]
+        for name in preferredNames {
+            if let node = scene.rootNode.childNode(withName: name, recursively: true) {
+                return node
+            }
+        }
         if let geometryNode = deepestGeometryNode(from: scene.rootNode) {
-            return geometryNode.parent ?? geometryNode
+            return commonGeometryAncestor(for: geometryNode)
         }
         return scene.rootNode
+    }
+
+    private static func commonGeometryAncestor(for geometryNode: SCNNode) -> SCNNode {
+        var candidate = geometryNode.parent ?? geometryNode
+        while let parent = candidate.parent {
+            let geometryChildren = parent.childNodes.filter { $0.geometry != nil || hasGeometry(in: $0) }
+            if geometryChildren.count > 1 {
+                return parent
+            }
+            candidate = parent
+        }
+        return candidate
+    }
+
+    private static func hasGeometry(in node: SCNNode) -> Bool {
+        if node.geometry != nil { return true }
+        return node.childNodes.contains { hasGeometry(in: $0) }
     }
 
     private static func deepestGeometryNode(from node: SCNNode) -> SCNNode? {
@@ -156,15 +193,24 @@ enum AsteroidFactory {
     }
 
     private static func normalizeScale(of node: SCNNode, targetSpan: Float) {
+        let span = measuredSpan(of: node)
+        guard span > 0.0001 else { return }
+        let factor = targetSpan / span
+        node.scale = SCNVector3(factor, factor, factor)
+    }
+
+    private static func measuredSpan(of node: SCNNode) -> Float {
         let (bboxMin, bboxMax) = node.boundingBox
-        let span = Swift.max(
+        let direct = Swift.max(
             bboxMax.x - bboxMin.x,
             bboxMax.y - bboxMin.y,
             bboxMax.z - bboxMin.z
         )
-        guard span > 0 else { return }
-        let factor = targetSpan / span
-        node.scale = SCNVector3(factor, factor, factor)
+        if direct > 0.0001 {
+            return direct
+        }
+        let childSpans = node.childNodes.map { measuredSpan(of: $0) }
+        return childSpans.max() ?? 0
     }
 
     private static func fixMaterials(in node: SCNNode) {
@@ -172,10 +218,12 @@ enum AsteroidFactory {
             geometry.materials = geometry.materials.map { material in
                 let copy = material.copy() as? SCNMaterial ?? material
                 copy.isDoubleSided = true
+                copy.fillMode = .fill
+                copy.lightingModel = .physicallyBased
+                copy.transparencyMode = .default
                 if copy.diffuse.contents == nil {
                     copy.diffuse.contents = UIColor(white: 0.55, alpha: 1)
                 }
-                copy.lightingModel = .physicallyBased
                 return copy
             }
         }
