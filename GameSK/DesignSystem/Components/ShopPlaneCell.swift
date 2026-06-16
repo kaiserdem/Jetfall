@@ -12,6 +12,7 @@ final class ShopPlaneCell: UICollectionViewCell {
     private let glowView = UIView()
     private let aircraftTag = UILabel()
     private let nameLabel = UILabel()
+    private let cruiseLabel = UILabel()
     private let priceLabel = UILabel()
     private let statusBadge = UILabel()
     private let previewContainer = UIView()
@@ -88,6 +89,11 @@ final class ShopPlaneCell: UICollectionViewCell {
         nameLabel.adjustsFontSizeToFitWidth = true
         nameLabel.minimumScaleFactor = 0.82
 
+        cruiseLabel.translatesAutoresizingMaskIntoConstraints = false
+        cruiseLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        cruiseLabel.textColor = GameStyle.textSecondary
+        cruiseLabel.numberOfLines = 2
+
         priceLabel.translatesAutoresizingMaskIntoConstraints = false
         priceLabel.font = .monospacedDigitSystemFont(ofSize: 15, weight: .bold)
         priceLabel.textColor = GameStyle.gaugeAmber
@@ -158,6 +164,7 @@ final class ShopPlaneCell: UICollectionViewCell {
         cardView.addSubview(aircraftTag)
         cardView.addSubview(statusBadge)
         cardView.addSubview(nameLabel)
+        cardView.addSubview(cruiseLabel)
         cardView.addSubview(priceLabel)
         cardView.addSubview(previewContainer)
         cardView.addSubview(requirementsStack)
@@ -200,14 +207,18 @@ final class ShopPlaneCell: UICollectionViewCell {
             nameLabel.leadingAnchor.constraint(equalTo: aircraftTag.leadingAnchor),
             nameLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
 
-            priceLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
+            cruiseLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: 4),
+            cruiseLabel.leadingAnchor.constraint(equalTo: aircraftTag.leadingAnchor),
+            cruiseLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
+
+            priceLabel.topAnchor.constraint(equalTo: cruiseLabel.bottomAnchor, constant: 4),
             priceLabel.leadingAnchor.constraint(equalTo: aircraftTag.leadingAnchor),
             priceLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
 
             previewContainer.topAnchor.constraint(equalTo: priceLabel.bottomAnchor, constant: 10),
             previewContainer.leadingAnchor.constraint(equalTo: accentStripe.trailingAnchor, constant: 10),
             previewContainer.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
-            previewContainer.heightAnchor.constraint(equalToConstant: 96),
+            previewContainer.heightAnchor.constraint(equalToConstant: 112),
 
             sceneView.topAnchor.constraint(equalTo: previewContainer.topAnchor),
             sceneView.leadingAnchor.constraint(equalTo: previewContainer.leadingAnchor),
@@ -250,7 +261,8 @@ final class ShopPlaneCell: UICollectionViewCell {
 
         nameLabel.text = plane.name
         aircraftTag.text = plane.callSign
-        priceLabel.text = "\(plane.cruiseSpeedShortText()) · \(formattedPrice(for: plane))"
+        cruiseLabel.text = plane.cruiseSpeedDetailText()
+        priceLabel.text = formattedPrice(for: plane)
 
         let isOwned = PlayerPlaneStore.isOwned(plane.id)
         let isEquipped = PlayerPlaneStore.isEquipped(plane.id)
@@ -348,6 +360,7 @@ final class ShopPlaneCell: UICollectionViewCell {
         lockedInfoCollapsedHeight?.isActive = true
         requirementsStack.isHidden = true
         priceLabel.textColor = GameStyle.textPrimary
+        cruiseLabel.textColor = GameStyle.textSecondary
 
         statusBadge.isHidden = false
         statusBadge.text = "  EQUIPPED  "
@@ -369,6 +382,7 @@ final class ShopPlaneCell: UICollectionViewCell {
         lockedInfoCollapsedHeight?.isActive = true
         requirementsStack.isHidden = true
         priceLabel.textColor = GameStyle.gaugeAmber
+        cruiseLabel.textColor = GameStyle.textSecondary
 
         statusBadge.isHidden = false
         statusBadge.text = "  OWNED  "
@@ -388,8 +402,9 @@ final class ShopPlaneCell: UICollectionViewCell {
     private func applyLockedStyle(plane: ShopPlane) {
         lockedInfoCollapsedHeight?.isActive = false
         requirementsStack.isHidden = false
-        unlockRequirementLabel.text = "\(plane.cruiseSpeedDetailText()) · \(plane.unlockRequirementText())"
+        unlockRequirementLabel.text = plane.unlockRequirementText()
         priceLabel.textColor = GameStyle.textSecondary
+        cruiseLabel.textColor = GameStyle.textSecondary.withAlphaComponent(0.85)
 
         statusBadge.isHidden = false
         statusBadge.text = "  LOCKED  "
@@ -409,8 +424,9 @@ final class ShopPlaneCell: UICollectionViewCell {
     private func applyAvailableStyle(plane: ShopPlane) {
         lockedInfoCollapsedHeight?.isActive = false
         requirementsStack.isHidden = false
-        unlockRequirementLabel.text = "\(plane.cruiseSpeedDetailText()) · \(plane.unlockRequirementText())"
+        unlockRequirementLabel.text = plane.unlockRequirementText()
         priceLabel.textColor = GameStyle.gaugeAmber
+        cruiseLabel.textColor = GameStyle.textSecondary
 
         statusBadge.isHidden = false
         statusBadge.text = "  AVAILABLE  "

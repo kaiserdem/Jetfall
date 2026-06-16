@@ -30,19 +30,17 @@ struct ShopPlane: Equatable {
         id == 1 ? 0.65 : 1.10
     }
 
-    func cruiseSpeedShortText() -> String {
-        id == 1 ? "Steady cruise" : "Fast cruise"
+    /// Nominal in-sector cruise for a standard interceptor (~280 km/s).
+    private static let referenceCruiseKmPerSec: Float = 280
+
+    /// Display cruise velocity derived from the gameplay multiplier.
+    var cruiseVelocityKmPerSec: Int {
+        Int((Self.referenceCruiseKmPerSec * cruiseSpeedMultiplier).rounded())
     }
 
     func cruiseSpeedDetailText() -> String {
-        let rating = Int(cruiseSpeedMultiplier * 100)
-        return id == 1
-            ? "Cruise speed: Steady (\(rating)%)"
-            : "Cruise speed: Fast (\(rating)%)"
-    }
-
-    func shopSpecsText() -> String {
-        "\(cruiseSpeedDetailText()) · \(priceText())"
+        let flightClass = id == 1 ? "patrol" : "intercept"
+        return "Cruise velocity: \(cruiseVelocityKmPerSec) km/s · \(flightClass)"
     }
 
     func isLevelRequirementMet() -> Bool {
