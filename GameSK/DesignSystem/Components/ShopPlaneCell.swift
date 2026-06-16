@@ -24,6 +24,9 @@ final class ShopPlaneCell: UICollectionViewCell {
     private let unlockRequirementLabel = UILabel()
     private var lockedInfoCollapsedHeight: NSLayoutConstraint?
     private var didConfigureScene = false
+    private var previewPlaneNode: SCNNode?
+    private var configuredPlaneID: Int?
+    private var displayedPlane: ShopPlane?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -34,14 +37,14 @@ final class ShopPlaneCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        gradientLayer.frame = cardView.bounds
-    }
-
     override func prepareForReuse() {
         super.prepareForReuse()
         sceneView.isPlaying = false
+        previewPlaneNode?.removeAllActions()
+        previewPlaneNode?.removeFromParentNode()
+        previewPlaneNode = nil
+        configuredPlaneID = nil
+        displayedPlane = nil
     }
 
     private func setup() {
@@ -109,6 +112,7 @@ final class ShopPlaneCell: UICollectionViewCell {
         sceneView.autoenablesDefaultLighting = true
         sceneView.allowsCameraControl = false
         sceneView.antialiasingMode = .multisampling2X
+        sceneView.rendersContinuously = true
 
         blurOverlay.translatesAutoresizingMaskIntoConstraints = false
         blurOverlay.isHidden = true
@@ -230,8 +234,22 @@ final class ShopPlaneCell: UICollectionViewCell {
         ])
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        gradientLayer.frame = cardView.bounds
+
+        guard previewContainer.bounds.width > 1, let plane = displayedPlane else { return }
+        if previewPlaneNode?.parent == nil {
+            configuredPlaneID = nil
+            setPreviewPlane(for: plane)
+        }
+        sceneView.isPlaying = true
+    }
+
     func configure(with plane: ShopPlane) {
+        displayedPlane = plane
         configureSceneIfNeeded()
+        setPreviewPlane(for: plane)
         sceneView.isPlaying = true
 
         nameLabel.text = plane.name
@@ -292,9 +310,33 @@ final class ShopPlaneCell: UICollectionViewCell {
         ambient.light?.intensity = 420
         scene.rootNode.addChildNode(ambient)
 
-        let assembly = Plane3DFactory.makeFlightPlane()
+        let key = SCNNode()
+        key.light = SCNLight()
+        key.light?.type = .directional
+        key.light?.intensity = 700
+        key.eulerAngles = SCNVector3(-0.55, 0.75, 0)
+        scene.rootNode.addChildNode(key)
+    }
+
+    private func setPreviewPlane(for plane: ShopPlane) {
+        guard let scene = sceneView.scene else { return }
+
+        let isAttached = previewPlaneNode?.parent != nil
+        if configuredPlaneID == plane.id, isAttached {
+            return
+        }
+
+        configuredPlaneID = plane.id
+        previewPlaneNode?.removeAllActions()
+        previewPlaneNode?.removeFromParentNode()
+
+        let assembly = Plane3DFactory.makeFlightPlane(forResource: plane.modelResourceName)
         let planeNode = assembly.rootNode
-        planeNode.scale = SCNVector3(0.42, 0.42, 0.42)
+        planeNode.scale = SCNVector3(
+            Plane3DFactory.shopPreviewScale,
+            Plane3DFactory.shopPreviewScale,
+            Plane3DFactory.shopPreviewScale
+        )
         planeNode.position = SCNVector3(0, 0.3, 0)
         planeNode.eulerAngles = SCNVector3(-0.1, .pi * 0.92, 0)
         scene.rootNode.addChildNode(planeNode)
@@ -303,6 +345,7 @@ final class ShopPlaneCell: UICollectionViewCell {
             SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 14)
         )
         planeNode.runAction(rotate)
+        previewPlaneNode = planeNode
     }
 
     private func applyEquippedStyle() {

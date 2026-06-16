@@ -12,9 +12,17 @@ struct ShopPlane: Equatable {
         return (id - 1) * 10 + 1
     }
 
-    /// Planes after the starter reuse the same mesh and appear blurred in the shop.
+    /// Slots without a dedicated asset reuse plane1 and stay blurred in the hangar.
     var showsPrototypeBlur: Bool {
-        id > 1
+        id > 2
+    }
+
+    var modelResourceName: String {
+        switch id {
+        case 1: return "plane1"
+        case 2: return "plane2"
+        default: return "plane1"
+        }
     }
 
     func isLevelRequirementMet() -> Bool {
@@ -42,18 +50,22 @@ enum ShopPlaneCatalog {
 
     static let all: [ShopPlane] = [
         ShopPlane(id: 1, name: "Scout Mk.I", callSign: "STARTER", requiredCompletedLevels: 0, creditCost: 0),
-        ShopPlane(id: 2, name: "Sparrow II", callSign: "INTERCEPTOR", requiredCompletedLevels: 10, creditCost: 2_500),
-        ShopPlane(id: 3, name: "Thunderbolt", callSign: "STRIKE", requiredCompletedLevels: 20, creditCost: 5_000),
-        ShopPlane(id: 4, name: "Corsair", callSign: "PATROL", requiredCompletedLevels: 30, creditCost: 7_500),
-        ShopPlane(id: 5, name: "Phantom Wing", callSign: "STEALTH", requiredCompletedLevels: 40, creditCost: 10_000),
-        ShopPlane(id: 6, name: "Viper Strike", callSign: "ASSAULT", requiredCompletedLevels: 50, creditCost: 12_500),
-        ShopPlane(id: 7, name: "Atlas Heavy", callSign: "BOMBER", requiredCompletedLevels: 60, creditCost: 15_000),
-        ShopPlane(id: 8, name: "Eclipse Jet", callSign: "RECON", requiredCompletedLevels: 70, creditCost: 17_500),
-        ShopPlane(id: 9, name: "Nova Cruiser", callSign: "ELITE", requiredCompletedLevels: 80, creditCost: 20_000),
-        ShopPlane(id: 10, name: "Apex Ace", callSign: "LEGEND", requiredCompletedLevels: 90, creditCost: 22_500)
+        ShopPlane(id: 2, name: "Sparrow II", callSign: "INTERCEPTOR", requiredCompletedLevels: 10, creditCost: 3_500),
+        ShopPlane(id: 3, name: "Thunderbolt", callSign: "STRIKE", requiredCompletedLevels: 20, creditCost: 7_000),
+        ShopPlane(id: 4, name: "Corsair", callSign: "PATROL", requiredCompletedLevels: 30, creditCost: 10_500),
+        ShopPlane(id: 5, name: "Phantom Wing", callSign: "STEALTH", requiredCompletedLevels: 40, creditCost: 14_000),
+        ShopPlane(id: 6, name: "Viper Strike", callSign: "ASSAULT", requiredCompletedLevels: 50, creditCost: 17_500),
+        ShopPlane(id: 7, name: "Atlas Heavy", callSign: "BOMBER", requiredCompletedLevels: 60, creditCost: 21_000),
+        ShopPlane(id: 8, name: "Eclipse Jet", callSign: "RECON", requiredCompletedLevels: 70, creditCost: 24_500),
+        ShopPlane(id: 9, name: "Nova Cruiser", callSign: "ELITE", requiredCompletedLevels: 80, creditCost: 28_000),
+        ShopPlane(id: 10, name: "Apex Ace", callSign: "LEGEND", requiredCompletedLevels: 90, creditCost: 31_500)
     ]
 
     static func plane(for id: Int) -> ShopPlane? {
         all.first { $0.id == id }
+    }
+
+    static func modelResourceName(for planeID: Int) -> String {
+        plane(for: planeID)?.modelResourceName ?? "plane1"
     }
 }

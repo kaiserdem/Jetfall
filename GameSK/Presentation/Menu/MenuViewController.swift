@@ -122,6 +122,8 @@ final class MenuViewController: UIViewController {
 
     private func refreshDashboard() {
         dashboardPanel.update(with: .current())
+        aircraftPreview.reloadSelectedPlane()
+        aircraftPreview.startAnimating()
     }
 
     private func showStarfieldIfNeeded() {

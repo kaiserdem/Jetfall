@@ -10,32 +10,54 @@ enum Plane3DFactory {
         let hasPropeller: Bool
     }
 
-    private static var flightPlaneTemplate: PlaneAssembly?
+    private static var flightPlaneTemplates: [String: PlaneAssembly] = [:]
+
+    /// Normalized model size so plane1 and plane2 match in-game proportions.
+    private static let modelTargetSpan: Float = 3.8
+
+    /// UI previews use a larger display scale than gameplay.
+    static let shopPreviewScale: Float = 3.15
+    static let menuPreviewScale: Float = 2.7
 
     /// Plane for forward flight — nose points along +Z.
-    static func makeFlightPlane() -> PlaneAssembly {
-        if let flightPlaneTemplate {
-            return cloneAssembly(flightPlaneTemplate)
+    static func makeFlightPlane(for planeID: Int) -> PlaneAssembly {
+        makeFlightPlane(forResource: ShopPlaneCatalog.modelResourceName(for: planeID))
+    }
+
+    static func makeFlightPlane(forResource resourceName: String) -> PlaneAssembly {
+        if let template = flightPlaneTemplates[resourceName] {
+            return cloneAssembly(template)
         }
-        if let scene = loadUSDZ(named: "plane") {
-            return buildFromUSDZ(scene, targetSpan: 3.8)
+        if let scene = loadUSDZ(named: resourceName) {
+            return buildFromUSDZ(scene, resourceName: resourceName, targetSpan: modelTargetSpan)
         }
-        return buildProcedural(targetSpan: 3.8)
+        if resourceName != "plane1" {
+            return makeFlightPlane(forResource: "plane1")
+        }
+        return buildProcedural(targetSpan: modelTargetSpan)
     }
 
     static func prepareFlightPlane() {
-        guard flightPlaneTemplate == nil else { return }
-        if let scene = loadUSDZ(named: "plane") {
-            flightPlaneTemplate = buildFromUSDZ(scene, targetSpan: 3.8)
-        } else {
-            flightPlaneTemplate = buildProcedural(targetSpan: 3.8)
+        for resourceName in ["plane1", "plane2"] {
+            if let scene = loadUSDZ(named: resourceName) {
+                flightPlaneTemplates[resourceName] = buildFromUSDZ(
+                    scene,
+                    resourceName: resourceName,
+                    targetSpan: modelTargetSpan
+                )
+            }
         }
     }
 
     private static func cloneAssembly(_ template: PlaneAssembly) -> PlaneAssembly {
         let rootNode = template.rootNode.clone()
         guard let bankNode = rootNode.childNode(withName: "player", recursively: false) else {
-            return template
+            return PlaneAssembly(
+                rootNode: rootNode,
+                bankNode: bankNodeFallback(in: rootNode),
+                propellerNode: bankNodeFallback(in: rootNode),
+                hasPropeller: template.hasPropeller
+            )
         }
         let propellerNode = bankNode.childNode(withName: "propeller", recursively: true) ?? bankNode
         return PlaneAssembly(
@@ -44,6 +66,10 @@ enum Plane3DFactory {
             propellerNode: propellerNode,
             hasPropeller: template.hasPropeller
         )
+    }
+
+    private static func bankNodeFallback(in rootNode: SCNNode) -> SCNNode {
+        rootNode.childNode(withName: "player", recursively: true) ?? rootNode
     }
 
     // MARK: - USDZ
@@ -55,8 +81,12 @@ enum Plane3DFactory {
         return try? SCNScene(url: url, options: [.convertToYUp: true])
     }
 
-    private static func buildFromUSDZ(_ scene: SCNScene, targetSpan: Float) -> PlaneAssembly {
-        let sourceModel = findModelNode(in: scene)
+    private static func buildFromUSDZ(
+        _ scene: SCNScene,
+        resourceName: String,
+        targetSpan: Float
+    ) -> PlaneAssembly {
+        let sourceModel = findModelNode(in: scene, resourceName: resourceName)
 
         let rootNode = SCNNode()
         let bankNode = SCNNode()
@@ -66,12 +96,13 @@ enum Plane3DFactory {
         sourceModel.transform = SCNMatrix4Identity
         fixMaterials(in: sourceModel)
 
+        orientForFlight(sourceModel, resourceName: resourceName)
+        centerNode(sourceModel)
+        applyUniformScale(to: sourceModel, targetSpan: targetSpan)
+
         bankNode.addChildNode(sourceModel)
         rootNode.addChildNode(bankNode)
 
-        orientForFlight(sourceModel)
-        centerNode(sourceModel)
-        normalizeScale(of: rootNode, targetSpan: targetSpan)
         alignContentToWrapperCenter(bankNode, in: rootNode)
 
         let propellerNode = sourceModel.childNode(withName: "propeller", recursively: true)
@@ -144,8 +175,11 @@ enum Plane3DFactory {
 
     // MARK: - Helpers
 
-    private static func findModelNode(in scene: SCNScene) -> SCNNode {
-        let preferredNames = ["plane", "Su35_2", "GLTF_SceneRootNode", "Sketchfab_model"]
+    private static func findModelNode(in scene: SCNScene, resourceName: String) -> SCNNode {
+        if let node = scene.rootNode.childNode(withName: resourceName, recursively: true) {
+            return node
+        }
+        let preferredNames = ["Sketchfab_model", "Su35_2", "GLTF_SceneRootNode", "Meshes", "scene"]
         for name in preferredNames {
             if let node = scene.rootNode.childNode(withName: name, recursively: true) {
                 return node
@@ -166,7 +200,8 @@ enum Plane3DFactory {
         return node.childNodes.isEmpty ? nil : node.childNodes[0]
     }
 
-    private static func orientForFlight(_ node: SCNNode) {
+    private static func orientForFlight(_ node: SCNNode, resourceName: String) {
+        _ = resourceName
         // Y-up (Sketchfab) → nose along +Z, belly down (not flipped).
         node.eulerAngles = SCNVector3(-Float.pi / 2, Float.pi, Float.pi)
     }
@@ -181,16 +216,30 @@ enum Plane3DFactory {
         node.position = SCNVector3(-center.x, -center.y, -center.z)
     }
 
-    private static func normalizeScale(of node: SCNNode, targetSpan: Float) {
+    private static func measuredSpan(of node: SCNNode) -> Float {
         let (bboxMin, bboxMax) = node.boundingBox
-        let span = Swift.max(
+        let direct = Swift.max(
             bboxMax.x - bboxMin.x,
             bboxMax.y - bboxMin.y,
             bboxMax.z - bboxMin.z
         )
-        guard span > 0 else { return }
+        if direct > 0.0001 {
+            return direct
+        }
+
+        let childSpans = node.childNodes.map { measuredSpan(of: $0) }
+        return childSpans.max() ?? 0
+    }
+
+    private static func applyUniformScale(to node: SCNNode, targetSpan: Float) {
+        let span = measuredSpan(of: node)
+        guard span > 0.0001 else { return }
         let factor = targetSpan / span
         node.scale = SCNVector3(factor, factor, factor)
+    }
+
+    private static func normalizeScale(of node: SCNNode, targetSpan: Float) {
+        applyUniformScale(to: node, targetSpan: targetSpan)
     }
 
     private static func alignContentToWrapperCenter(_ content: SCNNode, in wrapper: SCNNode) {

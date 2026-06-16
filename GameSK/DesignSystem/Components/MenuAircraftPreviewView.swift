@@ -6,6 +6,8 @@ final class MenuAircraftPreviewView: UIView {
     private let container = UIView()
     private let sceneView = SCNView()
     private var didConfigureScene = false
+    private var previewPlaneNode: SCNNode?
+    private var configuredPlaneID: Int?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -52,7 +54,37 @@ final class MenuAircraftPreviewView: UIView {
 
     func startAnimating() {
         configureSceneIfNeeded()
+        reloadSelectedPlane()
         sceneView.isPlaying = true
+    }
+
+    func reloadSelectedPlane() {
+        configureSceneIfNeeded()
+        guard sceneView.scene != nil else { return }
+
+        let planeID = PlayerPlaneStore.selectedPlaneID
+        guard configuredPlaneID != planeID else { return }
+        configuredPlaneID = planeID
+
+        previewPlaneNode?.removeAllActions()
+        previewPlaneNode?.removeFromParentNode()
+
+        let assembly = Plane3DFactory.makeFlightPlane(for: planeID)
+        let planeNode = assembly.rootNode
+        planeNode.scale = SCNVector3(
+            Plane3DFactory.menuPreviewScale,
+            Plane3DFactory.menuPreviewScale,
+            Plane3DFactory.menuPreviewScale
+        )
+        planeNode.position = SCNVector3(0, 0.2, 0)
+        planeNode.eulerAngles = SCNVector3(-0.1, .pi * 0.92, 0)
+        sceneView.scene?.rootNode.addChildNode(planeNode)
+
+        let rotate = SCNAction.repeatForever(
+            SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 16)
+        )
+        planeNode.runAction(rotate)
+        previewPlaneNode = planeNode
     }
 
     func stopAnimating() {
@@ -85,17 +117,5 @@ final class MenuAircraftPreviewView: UIView {
         key.light?.intensity = 700
         key.eulerAngles = SCNVector3(-0.55, 0.75, 0)
         scene.rootNode.addChildNode(key)
-
-        let assembly = Plane3DFactory.makeFlightPlane()
-        let planeNode = assembly.rootNode
-        planeNode.scale = SCNVector3(0.36, 0.36, 0.36)
-        planeNode.position = SCNVector3(0, 0.2, 0)
-        planeNode.eulerAngles = SCNVector3(-0.1, .pi * 0.92, 0)
-        scene.rootNode.addChildNode(planeNode)
-
-        let rotate = SCNAction.repeatForever(
-            SCNAction.rotateBy(x: 0, y: CGFloat.pi * 2, z: 0, duration: 16)
-        )
-        planeNode.runAction(rotate)
     }
 }

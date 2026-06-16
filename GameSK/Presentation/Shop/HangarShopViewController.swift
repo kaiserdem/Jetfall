@@ -70,9 +70,14 @@ final class HangarShopViewController: UIViewController {
         super.viewWillAppear(animated)
         updateFleetProgress()
         updateCreditsBadge()
-        collectionView.reloadData()
-        updateFocusedPlane()
         didPerformInitialScroll = false
+
+        GameAssetLoader.shared.whenReady { [weak self] in
+            guard let self else { return }
+            Plane3DFactory.prepareFlightPlane()
+            self.collectionView.reloadData()
+            self.updateFocusedPlane()
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -632,11 +637,22 @@ extension HangarShopViewController: UICollectionViewDataSource, UICollectionView
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         clearPagerNavigationLock()
         updateFocusedPlane()
+        applyCarouselTransforms()
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         guard !decelerate else { return }
         clearPagerNavigationLock()
         updateFocusedPlane()
+        applyCarouselTransforms()
+    }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        willDisplay cell: UICollectionViewCell,
+        forItemAt indexPath: IndexPath
+    ) {
+        guard let planeCell = cell as? ShopPlaneCell else { return }
+        planeCell.configure(with: planes[indexPath.item])
     }
 }

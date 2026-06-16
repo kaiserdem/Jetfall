@@ -22,6 +22,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private var asteroidSpawnTimer: TimeInterval = 0
     private var fireTimer: TimeInterval = 0
     private var currentBankAngle: Float = 0
+    private var currentPitchAngle: Float = 0
     private var propellerAngle: Float = 0
     private lazy var cometEffects = CometEffectController(parent: scene.rootNode)
 
@@ -34,6 +35,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private let moveSpeed: Float = 14
     private let asteroidSpawnInterval: TimeInterval = 0.9
     private let maxBankAngle: Float = .pi / 6
+    private let maxPitchAngle: Float = .pi / 12
     private let bankSmoothing: Float = 10
     private let propellerSpeed: Float = 24
     private let bulletRange: Float = 400
@@ -61,7 +63,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         self.scnView = scnView
         self.currentLevel = max(1, min(LevelConfigFactory.totalLevels, startingLevel))
 
-        let assembly = Plane3DFactory.makeFlightPlane()
+        let assembly = Plane3DFactory.makeFlightPlane(for: PlayerPlaneStore.selectedPlaneID)
         bankNode = assembly.bankNode
         propellerNode = assembly.propellerNode
         hasPropeller = assembly.hasPropeller
@@ -173,10 +175,11 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         asteroidSpawnTimer = 0
         activeDirections = []
         currentBankAngle = 0
+        currentPitchAngle = 0
 
         playerRoot.isHidden = false
         playerRoot.position = SCNVector3(0, 0, 0)
-        bankNode.rotation = SCNVector4Zero
+        bankNode.eulerAngles = SCNVector3Zero
 
         fuelRemaining = levelConfig.fuelDuration
         missionScoreTracker = MissionScoreTracker(level: currentLevel)
@@ -301,6 +304,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         var dx: Float = 0
         var dy: Float = 0
         var horizontalInput: Float = 0
+        var verticalInput: Float = 0
 
         if activeDirections.contains(.left) {
             dx += 1
@@ -310,8 +314,14 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             dx -= 1
             horizontalInput += 1
         }
-        if activeDirections.contains(.up) { dy += 1 }
-        if activeDirections.contains(.down) { dy -= 1 }
+        if activeDirections.contains(.up) {
+            dy += 1
+            verticalInput += 1
+        }
+        if activeDirections.contains(.down) {
+            dy -= 1
+            verticalInput -= 1
+        }
 
         if dx != 0, dy != 0 {
             let factor: Float = 0.707
@@ -323,10 +333,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         playerRoot.position.x += dx * distance
         playerRoot.position.y += dy * distance
 
-        let targetBank = horizontalInput * maxBankAngle
         let blend = min(1, bankSmoothing * delta)
+        let targetBank = horizontalInput * maxBankAngle
         currentBankAngle += (targetBank - currentBankAngle) * blend
-        bankNode.rotation = SCNVector4(0, 0, 1, currentBankAngle)
+        let targetPitch = -verticalInput * maxPitchAngle
+        currentPitchAngle += (targetPitch - currentPitchAngle) * blend
+        bankNode.eulerAngles = SCNVector3(currentPitchAngle, 0, currentBankAngle)
 
         if hasPropeller {
             propellerAngle += propellerSpeed * delta
