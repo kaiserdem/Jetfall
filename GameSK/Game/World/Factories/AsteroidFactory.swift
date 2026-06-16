@@ -26,7 +26,9 @@ enum AsteroidFactory {
 
         let asteroid = template.clone()
         asteroid.name = "enemy"
-        applyTint(to: asteroid, color: spawnTint())
+        let tint = spawnTint()
+        applyTint(to: asteroid, color: tint)
+        attachCosmicDust(to: asteroid)
         return asteroid
     }
 
@@ -77,6 +79,119 @@ enum AsteroidFactory {
             node.geometry = uniqueGeometry
         }
         node.childNodes.forEach { applyTint(to: $0, color: color) }
+    }
+
+    // MARK: - Cosmic dust
+
+    private static var dustParticleTemplate: SCNParticleSystem?
+    private static let dustSpeckImage = makeSoftSpeckImage()
+    private static let dustColor = UIColor(white: 0.8, alpha: 0.24)
+
+    private static func attachCosmicDust(to asteroid: SCNNode) {
+        let dustRoot = SCNNode()
+        dustRoot.name = "cosmicDust"
+        dustRoot.renderingOrder = 4
+        dustRoot.eulerAngles = SCNVector3(
+            Float.random(in: 0...(Float.pi * 2)),
+            Float.random(in: 0...(Float.pi * 2)),
+            Float.random(in: 0...(Float.pi * 2))
+        )
+        dustRoot.scale = SCNVector3(
+            Float.random(in: 0.9...1.3),
+            Float.random(in: 0.65...1.0),
+            Float.random(in: 0.85...1.35)
+        )
+
+        let mainEmitter = SCNNode()
+        mainEmitter.position = randomDustOffset(magnitude: 0.42)
+        mainEmitter.addParticleSystem(makeDustParticleSystem(birthRate: CGFloat.random(in: 6...9)))
+        dustRoot.addChildNode(mainEmitter)
+
+        if Bool.random() {
+            let secondaryEmitter = SCNNode()
+            secondaryEmitter.position = randomDustOffset(magnitude: 0.55)
+            secondaryEmitter.eulerAngles = SCNVector3(
+                Float.random(in: -0.6...0.6),
+                Float.random(in: -0.6...0.6),
+                Float.random(in: -0.6...0.6)
+            )
+            let secondary = makeDustParticleSystem(birthRate: CGFloat.random(in: 2...4))
+            secondary.particleSize *= 0.85
+            secondaryEmitter.addParticleSystem(secondary)
+            dustRoot.addChildNode(secondaryEmitter)
+        }
+
+        asteroid.addChildNode(dustRoot)
+    }
+
+    private static func randomDustOffset(magnitude: Float) -> SCNVector3 {
+        SCNVector3(
+            Float.random(in: -magnitude...magnitude),
+            Float.random(in: -magnitude * 0.7...magnitude * 0.7),
+            Float.random(in: -magnitude...magnitude)
+        )
+    }
+
+    private static func makeDustParticleSystem(birthRate: CGFloat) -> SCNParticleSystem {
+        let particles = (dustParticleTemplate?.copy() as? SCNParticleSystem) ?? buildDustParticleTemplate()
+        particles.birthRate = birthRate
+        particles.particleColor = dustColor
+        particles.emittingDirection = SCNVector3(
+            Float.random(in: -0.4...0.4),
+            Float.random(in: -0.4...0.4),
+            Float.random(in: -0.4...0.4)
+        )
+        return particles
+    }
+
+    private static func buildDustParticleTemplate() -> SCNParticleSystem {
+        let particles = SCNParticleSystem()
+        particles.birthRate = 8
+        particles.birthLocation = .surface
+        particles.particleLifeSpan = 1.35
+        particles.particleLifeSpanVariation = 0.55
+        particles.particleSize = 0.028
+        particles.particleSizeVariation = 0.014
+        particles.particleVelocity = 0.09
+        particles.particleVelocityVariation = 0.07
+        particles.spreadingAngle = 42
+        particles.emitterShape = SCNSphere(radius: 1.18)
+        particles.particleImage = dustSpeckImage
+        particles.particleColor = dustColor
+        particles.blendMode = .additive
+        particles.isLocal = true
+        particles.warmupDuration = 0.6
+        particles.orientationMode = .billboardScreenAligned
+        particles.stretchFactor = 0
+        dustParticleTemplate = particles
+        return particles.copy() as? SCNParticleSystem ?? particles
+    }
+
+    private static func makeSoftSpeckImage() -> UIImage {
+        let length = 10
+        let size = CGSize(width: length, height: length)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+            let radius = size.width / 2
+            let colors = [
+                UIColor.white.cgColor,
+                UIColor.white.withAlphaComponent(0).cgColor
+            ] as CFArray
+            let gradient = CGGradient(
+                colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                colors: colors,
+                locations: [0, 1]
+            )!
+            context.cgContext.drawRadialGradient(
+                gradient,
+                startCenter: center,
+                startRadius: 0,
+                endCenter: center,
+                endRadius: radius,
+                options: []
+            )
+        }
     }
 
     static func makeTumbleAction() -> SCNAction {
