@@ -92,7 +92,7 @@ final class ShopPlaneCell: UICollectionViewCell {
         cruiseLabel.translatesAutoresizingMaskIntoConstraints = false
         cruiseLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         cruiseLabel.textColor = GameStyle.textSecondary
-        cruiseLabel.numberOfLines = 4
+        cruiseLabel.numberOfLines = 3
 
         priceLabel.translatesAutoresizingMaskIntoConstraints = false
         priceLabel.font = .monospacedDigitSystemFont(ofSize: 15, weight: .bold)

@@ -137,9 +137,13 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             }
         }
 
-        gameController.onFuelChange = { [weak self] remaining, total in
+        gameController.onFuelChange = { [weak self] remaining, total, afterburnerActive in
             DispatchQueue.main.async {
-                self?.hudView.updateFuel(remaining: remaining, total: total)
+                self?.hudView.updateFuel(
+                    remaining: remaining,
+                    total: total,
+                    afterburnerActive: afterburnerActive
+                )
             }
         }
 

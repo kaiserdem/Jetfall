@@ -48,7 +48,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
     var onScoreChange: ((Int) -> Void)?
     var onLevelProgress: ((Int, Int, Int) -> Void)?
-    var onFuelChange: ((TimeInterval, TimeInterval) -> Void)?
+    var onFuelChange: ((TimeInterval, TimeInterval, Bool) -> Void)?
     var onLevelComplete: ((Int, Bool, MissionScoreResult) -> Void)?
     var onGameOver: ((Int, Bool) -> Void)?
     var onVictory: ((MissionScoreResult) -> Void)?
@@ -191,7 +191,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         fuelRemaining = levelConfig.fuelDuration
         missionScoreTracker = MissionScoreTracker(level: currentLevel)
         onScoreChange?(0)
-        onFuelChange?(fuelRemaining, levelConfig.fuelDuration)
+        onFuelChange?(fuelRemaining, levelConfig.fuelDuration, false)
 
         clearEnemies()
         clearBullets()
@@ -377,7 +377,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             ? PlaneFlightPerformance.afterburnerFuelMultiplier
             : 1
         fuelRemaining -= TimeInterval(delta * fuelRate)
-        onFuelChange?(max(0, fuelRemaining), levelConfig.fuelDuration)
+        onFuelChange?(max(0, fuelRemaining), levelConfig.fuelDuration, isBoosting)
 
         if fuelRemaining <= 0 {
             triggerGameOver(outOfFuel: true)

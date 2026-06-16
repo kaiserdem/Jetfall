@@ -7,16 +7,8 @@ enum PlaneFlightPerformance {
     /// Afterburner doubles forward cruise velocity.
     static let afterburnerSpeedMultiplier: Float = 2.0
 
-    /// Afterburner raises fuel consumption by 40%.
-    static let afterburnerFuelMultiplier: Float = 1.40
-
-    static func cruiseFuelFlowKgPerSec(planeMultiplier: Float) -> Float {
-        Float(cruiseVelocityKmPerSec(planeMultiplier: planeMultiplier)) * 0.14
-    }
-
-    static func afterburnerFuelFlowKgPerSec(planeMultiplier: Float) -> Float {
-        cruiseFuelFlowKgPerSec(planeMultiplier: planeMultiplier) * afterburnerFuelMultiplier
-    }
+    /// Afterburner raises fuel consumption by 60%.
+    static let afterburnerFuelMultiplier: Float = 1.60
 
     static func cruiseVelocityKmPerSec(planeMultiplier: Float) -> Int {
         Int((referenceCruiseKmPerSec * planeMultiplier).rounded())

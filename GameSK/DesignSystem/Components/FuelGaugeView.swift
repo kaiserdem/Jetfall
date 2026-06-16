@@ -8,6 +8,7 @@ final class FuelGaugeView: UIView {
     private let fillView = UIView()
     private var fillWidthConstraint: NSLayoutConstraint?
     private var fillFraction: CGFloat = 1
+    private var isAfterburnerActive = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -70,12 +71,33 @@ final class FuelGaugeView: UIView {
         fillWidthConstraint?.constant = maxWidth * fillFraction
     }
 
-    func update(remaining: TimeInterval, total: TimeInterval) {
+    func update(remaining: TimeInterval, total: TimeInterval, afterburnerActive: Bool = false) {
         let safeTotal = max(total, 0.01)
         let fraction = max(0, min(1, remaining / safeTotal))
         fillFraction = CGFloat(fraction)
         valueLabel.text = "\(Int(round(fraction * 100)))%"
         fillView.backgroundColor = fraction <= 0.2 ? GameStyle.gaugeLowRed : GameStyle.gaugeAmber
+        setAfterburnerHighlight(afterburnerActive)
         setNeedsLayout()
+    }
+
+    private func setAfterburnerHighlight(_ active: Bool) {
+        guard active != isAfterburnerActive else { return }
+        isAfterburnerActive = active
+
+        if active {
+            layer.borderColor = GameStyle.gaugeAmber.withAlphaComponent(0.38).cgColor
+            layer.shadowOpacity = 0
+            titleLabel.textColor = GameStyle.textPrimary
+            trackView.layer.borderColor = GameStyle.gaugeAmber.withAlphaComponent(0.28).cgColor
+            trackView.layer.borderWidth = 1
+        } else {
+            layer.borderColor = GameStyle.borderSteel.cgColor
+            layer.shadowOpacity = 0
+            GameStyle.styleHUDLabel(titleLabel, size: 13, weight: .heavy)
+            titleLabel.text = "FUEL"
+            trackView.layer.borderColor = GameStyle.borderSteel.cgColor
+            trackView.layer.borderWidth = 1
+        }
     }
 }

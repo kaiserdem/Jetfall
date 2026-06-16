@@ -125,7 +125,7 @@ final class GameHUDView: UIView {
         scoreLabel.text = "Score: \(score)"
     }
 
-    func updateFuel(remaining: TimeInterval, total: TimeInterval) {
-        fuelGauge.update(remaining: remaining, total: total)
+    func updateFuel(remaining: TimeInterval, total: TimeInterval, afterburnerActive: Bool = false) {
+        fuelGauge.update(remaining: remaining, total: total, afterburnerActive: afterburnerActive)
     }
 }

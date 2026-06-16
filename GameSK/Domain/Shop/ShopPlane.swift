@@ -48,14 +48,8 @@ struct ShopPlane: Equatable {
         "Afterburner velocity: \(afterburnerVelocityKmPerSec) km/s"
     }
 
-    func afterburnerFuelDetailText() -> String {
-        let flow = PlaneFlightPerformance.afterburnerFuelFlowKgPerSec(planeMultiplier: cruiseSpeedMultiplier)
-        let formatted = flow.formatted(.number.precision(.fractionLength(1)))
-        return "Afterburner fuel flow: \(formatted) kg/s"
-    }
-
     func aircraftSpecsText() -> String {
-        "\(cruiseSpeedDetailText())\n\(afterburnerDetailText())\n\(afterburnerFuelDetailText())"
+        "\(cruiseSpeedDetailText())\n\(afterburnerDetailText())"
     }
 
     func isLevelRequirementMet() -> Bool {
