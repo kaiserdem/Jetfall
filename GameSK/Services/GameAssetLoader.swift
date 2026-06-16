@@ -43,11 +43,14 @@ final class GameAssetLoader {
             self.reportProgress(0.74)
             AsteroidFactory.prepareTemplate()
             FuelPickupFactory.prepareTemplate()
+            AmmunitionPickupFactory.prepareTemplate()
 
             self.reportProgress(0.9)
 
             DispatchQueue.main.async {
                 WorldBuilder3D.installStarsTexture(starsImage)
+                AmmunitionPickupFactory.prepareHUDIcon()
+                AsteroidFactory.prepareHUDIcon()
                 self.reportProgress(1)
                 self.finishLoading()
             }

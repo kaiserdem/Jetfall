@@ -78,6 +78,9 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         pauseMenuView.onContinue = { [weak self] in
             self?.resumeFromPause()
         }
+        pauseMenuView.onRestart = { [weak self] in
+            self?.restartFromPause()
+        }
         pauseMenuView.onExit = { [weak self] in
             self?.dismiss(animated: true)
         }
@@ -101,7 +104,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         view.addSubview(boostButtonView)
 
         let sideInset: CGFloat = 20
-        let bottomInset: CGFloat = 18
+        let bottomInset: CGFloat = 38
 
         NSLayoutConstraint.activate([
             dPadView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -sideInset),
@@ -124,10 +127,15 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
     private func startGame() {
         gameController = Game3DController(scnView: scnView, startingLevel: startingLevel)
 
-        gameController.onScoreChange = { [weak self] score in
+        gameController.onAmmoChange = { [weak self] remaining, capacity in
             DispatchQueue.main.async {
-                self?.currentScore = score
-                self?.hudView.updateScore(score)
+                self?.hudView.updateAmmo(remaining: remaining, capacity: capacity)
+            }
+        }
+
+        gameController.onAmmoPickupCollected = { [weak self] added in
+            DispatchQueue.main.async {
+                self?.hudView.showAmmoPickupBonus(added: added)
             }
         }
 
@@ -194,7 +202,11 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
 
         currentScore = 0
         hudView.setPauseEnabled(true)
-        hudView.updateScore(0)
+        gameController.refreshHUD()
+        GameAssetLoader.shared.whenReady { [weak self] in
+            self?.hudView.refreshAmmunitionIcon()
+            self?.hudView.refreshAsteroidIcon()
+        }
         isPauseMenuVisible = false
         pauseMenuView.hide(animated: false)
         missionResultView.dismiss(animated: false)
@@ -220,6 +232,18 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             guard let self else { return }
             self.isPauseMenuVisible = false
             self.gameController.resume()
+            self.setControlsEnabled(true)
+        }
+    }
+
+    private func restartFromPause() {
+        dPadView.clearAll()
+        fireButtonView.clear()
+        boostButtonView.clear()
+        pauseMenuView.hide { [weak self] in
+            guard let self else { return }
+            self.isPauseMenuVisible = false
+            self.gameController.restartCurrentLevel()
             self.setControlsEnabled(true)
         }
     }

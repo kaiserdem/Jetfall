@@ -3,6 +3,7 @@ import UIKit
 final class PauseMenuView: UIView {
 
     var onContinue: (() -> Void)?
+    var onRestart: (() -> Void)?
     var onExit: (() -> Void)?
     var onShop: (() -> Void)?
 
@@ -10,6 +11,7 @@ final class PauseMenuView: UIView {
     private let panel = UIView()
     private let titleLabel = UILabel()
     private let continueButton = UIButton(type: .system)
+    private let restartButton = UIButton(type: .system)
     private let shopButton = UIButton(type: .system)
     private let exitButton = UIButton(type: .system)
 
@@ -34,7 +36,7 @@ final class PauseMenuView: UIView {
         panel.backgroundColor = GameStyle.panelBlueDark.withAlphaComponent(0.96)
 
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        titleLabel.text = "PAUSED"
+        titleLabel.text = "MENU"
         titleLabel.font = .systemFont(ofSize: 32, weight: .heavy)
         titleLabel.textColor = GameStyle.textPrimary
         titleLabel.textAlignment = .center
@@ -42,6 +44,10 @@ final class PauseMenuView: UIView {
         continueButton.translatesAutoresizingMaskIntoConstraints = false
         GameStyle.applyPrimaryButton(continueButton, title: "Continue")
         continueButton.addTarget(self, action: #selector(continueTapped), for: .touchUpInside)
+
+        restartButton.translatesAutoresizingMaskIntoConstraints = false
+        GameStyle.applySecondaryButton(restartButton, title: "Start Again")
+        restartButton.addTarget(self, action: #selector(restartTapped), for: .touchUpInside)
 
         shopButton.translatesAutoresizingMaskIntoConstraints = false
         GameStyle.applySecondaryButton(shopButton, title: "Shop")
@@ -62,6 +68,7 @@ final class PauseMenuView: UIView {
         addSubview(panel)
         panel.addSubview(titleLabel)
         panel.addSubview(continueButton)
+        panel.addSubview(restartButton)
         panel.addSubview(shopButton)
         panel.addSubview(exitButton)
 
@@ -84,7 +91,11 @@ final class PauseMenuView: UIView {
             continueButton.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 20),
             continueButton.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -20),
 
-            shopButton.topAnchor.constraint(equalTo: continueButton.bottomAnchor, constant: 12),
+            restartButton.topAnchor.constraint(equalTo: continueButton.bottomAnchor, constant: 12),
+            restartButton.leadingAnchor.constraint(equalTo: continueButton.leadingAnchor),
+            restartButton.trailingAnchor.constraint(equalTo: continueButton.trailingAnchor),
+
+            shopButton.topAnchor.constraint(equalTo: restartButton.bottomAnchor, constant: 12),
             shopButton.leadingAnchor.constraint(equalTo: continueButton.leadingAnchor),
             shopButton.trailingAnchor.constraint(equalTo: continueButton.trailingAnchor),
 
@@ -123,6 +134,10 @@ final class PauseMenuView: UIView {
 
     @objc private func continueTapped() {
         onContinue?()
+    }
+
+    @objc private func restartTapped() {
+        onRestart?()
     }
 
     @objc private func shopTapped() {

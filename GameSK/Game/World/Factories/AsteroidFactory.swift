@@ -1,9 +1,11 @@
+import Metal
 import SceneKit
 import UIKit
 
 enum AsteroidFactory {
 
     private static var template: SCNNode?
+    private static var cachedHUDIcon: UIImage?
 
     private static let resourceName = "asteroid1"
     private static let targetSpan: Float = 2.4
@@ -30,6 +32,64 @@ enum AsteroidFactory {
         applyTint(to: asteroid, color: tint)
         attachCosmicDust(to: asteroid)
         return asteroid
+    }
+
+    static func hudIconImage() -> UIImage? {
+        if let cachedHUDIcon {
+            return cachedHUDIcon
+        }
+        prepareTemplate()
+        guard let template else { return nil }
+        guard let image = renderHUDIcon(from: template) else { return nil }
+        cachedHUDIcon = image
+        return image
+    }
+
+    static func prepareHUDIcon(completion: ((UIImage?) -> Void)? = nil) {
+        func run() {
+            completion?(hudIconImage())
+        }
+        if Thread.isMainThread {
+            run()
+        } else {
+            DispatchQueue.main.async(execute: run)
+        }
+    }
+
+    private static let hudIconTint = UIColor(
+        hue: 0.08,
+        saturation: 0.24,
+        brightness: 0.74,
+        alpha: 1
+    )
+
+    private static func renderHUDIcon(from template: SCNNode) -> UIImage? {
+        let scene = SCNScene()
+        let model = template.clone()
+        applyTint(to: model, color: hudIconTint)
+        model.eulerAngles = SCNVector3(0.22, 0.92, 0.12)
+        scene.rootNode.addChildNode(model)
+
+        let span = targetSpan
+        let cameraNode = SCNNode()
+        let camera = SCNCamera()
+        camera.fieldOfView = 42
+        camera.zNear = 0.01
+        camera.zFar = 30
+        cameraNode.camera = camera
+        cameraNode.position = SCNVector3(0, span * 0.08, span * 2.45)
+        cameraNode.look(at: SCNVector3Zero)
+        scene.rootNode.addChildNode(cameraNode)
+
+        Plane3DFactory.addLights(to: scene.rootNode)
+
+        guard let device = MTLCreateSystemDefaultDevice() else { return nil }
+        let renderer = SCNRenderer(device: device, options: nil)
+        renderer.scene = scene
+        renderer.pointOfView = cameraNode
+
+        let size = CGSize(width: 72, height: 72)
+        return renderer.snapshot(atTime: 0, with: size, antialiasingMode: .multisampling4X)
     }
 
     private static func spawnTint() -> UIColor {

@@ -28,7 +28,7 @@ final class LevelSelectViewController: UIViewController {
     private let progressTrack = UIView()
     private let progressFill = UIView()
     private var progressFillWidth: NSLayoutConstraint?
-    private let backButton = AviatorNavButton(style: .labeled(symbol: "chevron.left", title: "Menu"))
+    private let backButton = AviatorNavButton(style: .labeled(title: "Menu"))
     private let creditsBadge = HangarCreditsBadge()
     private var collectionView: UICollectionView!
 

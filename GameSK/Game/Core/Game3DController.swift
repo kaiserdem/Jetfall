@@ -23,6 +23,9 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private var asteroidSpawnTimer: TimeInterval = 0
     private var fuelPickupSpawnTimer: TimeInterval = 0
     private var nextFuelPickupSpawnDelay: TimeInterval = 0
+    private var ammoPickupSpawnTimer: TimeInterval = 0
+    private var nextAmmoPickupSpawnDelay: TimeInterval = 0
+    private var ammoSpawnCooldownRemaining: TimeInterval = 0
     private var fireTimer: TimeInterval = 0
     private var currentBankAngle: Float = 0
     private var currentPitchAngle: Float = 0
@@ -33,6 +36,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private var levelConfig = LevelConfigFactory.config(for: 1)
     private var killsThisLevel = 0
     private var fuelRemaining: TimeInterval = 0
+    private var ammoRemaining = 0
+    private var ammoCapacity = 0
 
     private let hasPropeller: Bool
     private let moveSpeed: Float = 14
@@ -43,12 +48,14 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private let propellerSpeed: Float = 24
     private let bulletRange: Float = 400
     private let bulletSpeed: Float = 320
-    private let enemyHitRadius: Float = 1.05
+    private let asteroidHitRadius: Float = 1.1
     private let bulletHitRadius: Float = 0.22
     private var activeBullets: [ActiveBullet] = []
+    private var asteroidHitsRemaining: [ObjectIdentifier: Int] = [:]
     private let planeCruiseMultiplier: Float
 
-    var onScoreChange: ((Int) -> Void)?
+    var onAmmoChange: ((Int, Int) -> Void)?
+    var onAmmoPickupCollected: ((Int) -> Void)?
     var onLevelProgress: ((Int, Int, Int) -> Void)?
     var onFuelChange: ((TimeInterval, TimeInterval, Bool) -> Void)?
     var onFuelPickupCollected: (() -> Void)?
@@ -62,6 +69,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
     var missionKillPoints: Int {
         missionScoreTracker.killPoints
+    }
+
+    func refreshHUD() {
+        onAmmoChange?(ammoRemaining, ammoCapacity)
+        onFuelChange?(fuelRemaining, levelConfig.fuelDuration, isBoosting)
+        notifyLevelProgress()
     }
 
     init(scnView: SCNView, startingLevel: Int = 1) {
@@ -108,7 +121,9 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         let shape = SCNPhysicsShape(geometry: playerBox)
         let body = SCNPhysicsBody(type: .kinematic, shape: shape)
         body.categoryBitMask = PhysicsCategory.player
-        body.contactTestBitMask = PhysicsCategory.enemy | PhysicsCategory.fuelPickup
+        body.contactTestBitMask = PhysicsCategory.enemy
+            | PhysicsCategory.fuelPickup
+            | PhysicsCategory.ammoPickup
         body.collisionBitMask = PhysicsCategory.none
         playerRoot.physicsBody = body
 
@@ -185,6 +200,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         asteroidSpawnTimer = 0
         fuelPickupSpawnTimer = 0
         scheduleNextFuelPickupSpawn(initial: true)
+        ammoPickupSpawnTimer = 0
+        scheduleNextAmmoPickupSpawn(initial: true)
+        ammoSpawnCooldownRemaining = TimeInterval.random(
+            in: AmmunitionPickupConfig.initialSpawnCooldownRange
+        )
+        AmmunitionPickupFactory.prepareTemplate()
         activeDirections = []
         currentBankAngle = 0
         currentPitchAngle = 0
@@ -194,13 +215,17 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         bankNode.eulerAngles = SCNVector3Zero
 
         fuelRemaining = levelConfig.fuelDuration
+        ammoCapacity = levelConfig.startingAmmo
+        ammoRemaining = ammoCapacity
         missionScoreTracker = MissionScoreTracker(level: currentLevel)
-        onScoreChange?(0)
+        onAmmoChange?(ammoRemaining, ammoCapacity)
         onFuelChange?(fuelRemaining, levelConfig.fuelDuration, false)
 
         clearEnemies()
         clearFuelPickups()
+        clearAmmoPickups()
         clearBullets()
+        asteroidHitsRemaining.removeAll()
         cometEffects.reset()
         spawnInitialAsteroids()
         notifyLevelProgress()
@@ -209,6 +234,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private func clearFuelPickups() {
         worldNode.childNodes
             .filter { $0.name == "fuelPickup" }
+            .forEach { $0.removeFromParentNode() }
+    }
+
+    private func clearAmmoPickups() {
+        worldNode.childNodes
+            .filter { $0.name == "ammoPickup" }
             .forEach { $0.removeFromParentNode() }
     }
 
@@ -246,7 +277,6 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             level: currentLevel
         )
         lastMissionScoreResult = result
-        onScoreChange?(result.total)
 
         let hasNextLevel = currentLevel < LevelConfigFactory.totalLevels
         onLevelComplete?(currentLevel, hasNextLevel, result)
@@ -286,6 +316,13 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         ) * delta
     }
 
+    private func aimDirection() -> SCNVector3 {
+        let forward = cameraNode.convertVector(SCNVector3(0, 0, -1), to: nil)
+        let length = sqrt(forward.x * forward.x + forward.y * forward.y + forward.z * forward.z)
+        guard length > 0.0001 else { return SCNVector3(0, 0, 1) }
+        return SCNVector3(forward.x / length, forward.y / length, forward.z / length)
+    }
+
     // MARK: - Input
 
     func setDirections(_ directions: Set<MoveDirection>) {
@@ -320,9 +357,10 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
         updatePlayer(delta: delta)
         updateCamera(delta: delta)
-        scrollWorld(delta: delta)
         updateBullets(delta: delta)
+        scrollWorld(delta: delta)
         checkFuelPickupCollection()
+        checkAmmoPickupCollection()
         updateFuel(delta: delta)
         cometEffects.update(delta: delta, anchor: playerRoot.position)
 
@@ -334,7 +372,9 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             spawnAsteroid()
         }
         updateFuelPickupSpawning(delta: delta)
-        if isFiring, fireTimer >= 0.22 {
+        updateAmmoPickupSpawning(delta: delta)
+        ammoSpawnCooldownRemaining = max(0, ammoSpawnCooldownRemaining - TimeInterval(delta))
+        if isFiring, fireTimer >= 0.22, ammoRemaining > 0 {
             fireTimer = 0
             fireBullet()
         }
@@ -406,6 +446,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
                 if node.name == "fuelPickup" {
                     scheduleMissedFuelPickupRetry()
                 }
+                if node.name == "ammoPickup" {
+                    scheduleMissedAmmoPickupRetry()
+                }
+                if node.name == "enemy" {
+                    unregisterAsteroidHits(node)
+                }
                 node.removeFromParentNode()
             }
         }
@@ -414,6 +460,48 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private func scheduleMissedFuelPickupRetry() {
         fuelPickupSpawnTimer = 0
         nextFuelPickupSpawnDelay = TimeInterval.random(in: 22...36)
+    }
+
+    private func scheduleMissedAmmoPickupRetry() {
+        ammoPickupSpawnTimer = 0
+        nextAmmoPickupSpawnDelay = TimeInterval.random(in: ammoSpawnDelayRange(initial: false))
+    }
+
+    private var isLowOnAmmo: Bool {
+        ammoRemaining < AmmunitionPickupConfig.lowAmmoThreshold
+    }
+
+    private func ammoSpawnDelayRange(initial: Bool) -> ClosedRange<TimeInterval> {
+        if isLowOnAmmo {
+            return AmmunitionPickupConfig.lowAmmoSpawnDelayRange
+        }
+        if initial {
+            return AmmunitionPickupConfig.initialSpawnCooldownRange
+        }
+        return AmmunitionPickupConfig.backgroundSpawnDelayRange
+    }
+
+    private func canSpawnAmmoPickup(ignoringCooldown: Bool = false) -> Bool {
+        guard activeAmmoPickupCount < AmmunitionPickupConfig.maxOnScreen else { return false }
+        if isLowOnAmmo { return true }
+        if !ignoringCooldown, ammoSpawnCooldownRemaining > 0 { return false }
+        return true
+    }
+
+    private func noteAmmoPickupSpawned() {
+        ammoSpawnCooldownRemaining = TimeInterval.random(
+            in: AmmunitionPickupConfig.spawnCooldownRange
+        )
+    }
+
+    private func prioritizeAmmoPickupIfNeeded() {
+        guard isLowOnAmmo, !isGameOver, !isLevelComplete else { return }
+        guard activeAmmoPickupCount == 0 else { return }
+
+        ammoPickupSpawnTimer = 0
+        nextAmmoPickupSpawnDelay = TimeInterval.random(
+            in: AmmunitionPickupConfig.lowAmmoSpawnDelayRange
+        )
     }
 
     // MARK: - Spawning
@@ -434,7 +522,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             Float.random(in: 0...(Float.pi * 2))
         )
 
-        let hitRadius: CGFloat = 1.1
+        let hitRadius: CGFloat = CGFloat(asteroidHitRadius)
         let shape = SCNPhysicsShape(geometry: SCNSphere(radius: hitRadius))
         let body = SCNPhysicsBody(type: .kinematic, shape: shape)
         body.categoryBitMask = PhysicsCategory.enemy
@@ -445,6 +533,68 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         asteroid.runAction(AsteroidFactory.makeTumbleAction())
 
         worldNode.addChildNode(asteroid)
+        registerAsteroidHits(asteroid)
+        spawnAmmoPickup(alongside: asteroid)
+    }
+
+    private func registerAsteroidHits(_ asteroid: SCNNode) {
+        asteroidHitsRemaining[ObjectIdentifier(asteroid)] = levelConfig.hitsPerAsteroid
+    }
+
+    private func unregisterAsteroidHits(_ asteroid: SCNNode) {
+        asteroidHitsRemaining.removeValue(forKey: ObjectIdentifier(asteroid))
+    }
+
+    private var activeAmmoPickupCount: Int {
+        worldNode.childNodes.filter { $0.name == "ammoPickup" }.count
+    }
+
+    private func spawnAmmoPickup(alongside asteroid: SCNNode) {
+        guard canSpawnAmmoPickup() else { return }
+        guard Double.random(in: 0...1) <= AmmunitionPickupConfig.asteroidPairedSpawnChance else {
+            return
+        }
+
+        let position = AmmunitionPickupFactory.positionAlongside(asteroidPosition: asteroid.position)
+        spawnAmmoPickup(at: position)
+    }
+
+    private func spawnAmmoPickupAhead() {
+        let position = AmmunitionPickupFactory.spawnPosition(near: playerRoot.position)
+        spawnAmmoPickup(at: position)
+    }
+
+    private func spawnAmmoPickup(at position: SCNVector3) {
+        guard !isGameOver, !isLevelComplete else { return }
+        guard canSpawnAmmoPickup() else { return }
+        guard let pickup = AmmunitionPickupFactory.makePickup() else {
+            #if DEBUG
+            print("[Game3DController] Failed to spawn ammo pickup — Ammunition.usdz not loaded")
+            #endif
+            return
+        }
+
+        pickup.position = position
+
+        let hitRadius = CGFloat(AmmunitionPickupConfig.collectionRadius)
+        let shape = SCNPhysicsShape(geometry: SCNSphere(radius: hitRadius))
+        let body = SCNPhysicsBody(type: .kinematic, shape: shape)
+        body.categoryBitMask = PhysicsCategory.ammoPickup
+        body.contactTestBitMask = PhysicsCategory.player
+        body.collisionBitMask = PhysicsCategory.none
+        pickup.physicsBody = body
+
+        worldNode.addChildNode(pickup)
+        noteAmmoPickupSpawned()
+
+        #if DEBUG
+        print(
+            "[Game3DController] Ammo pickup spawned at",
+            pickup.position,
+            "active:",
+            activeAmmoPickupCount
+        )
+        #endif
     }
 
     // MARK: - Fuel pickups
@@ -547,22 +697,104 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         burst.runAction(SCNAction.sequence([SCNAction.group([grow, fade]), .removeFromParentNode()]))
     }
 
+    // MARK: - Ammunition pickups
+
+    private func scheduleNextAmmoPickupSpawn(initial: Bool) {
+        nextAmmoPickupSpawnDelay = TimeInterval.random(in: ammoSpawnDelayRange(initial: initial))
+    }
+
+    private func updateAmmoPickupSpawning(delta: Float) {
+        guard activeAmmoPickupCount < AmmunitionPickupConfig.maxOnScreen else {
+            ammoPickupSpawnTimer = 0
+            return
+        }
+
+        guard canSpawnAmmoPickup(ignoringCooldown: ammoRemaining == 0) else { return }
+
+        ammoPickupSpawnTimer += TimeInterval(delta)
+        guard ammoPickupSpawnTimer >= nextAmmoPickupSpawnDelay else { return }
+
+        ammoPickupSpawnTimer = 0
+        scheduleNextAmmoPickupSpawn(initial: false)
+        spawnAmmoPickupAhead()
+    }
+
+    private func checkAmmoPickupCollection() {
+        let playerCenter = playerRoot.presentation.worldPosition
+        let radius = AmmunitionPickupConfig.collectionRadius
+
+        for node in worldNode.childNodes where node.name == "ammoPickup" {
+            let pickupCenter = node.presentation.worldPosition
+            if distance(playerCenter, pickupCenter) <= radius {
+                collectAmmoPickup(node)
+                break
+            }
+        }
+    }
+
+    private func collectAmmoPickup(_ pickup: SCNNode) {
+        guard pickup.name == "ammoPickup", pickup.parent != nil else { return }
+
+        let worldPosition = pickup.presentation.worldPosition
+        pickup.removeFromParentNode()
+        addAmmoRefill()
+        addAmmoCollectionBurst(at: worldPosition)
+    }
+
+    private func addAmmoRefill() {
+        let bonus = max(1, Int((Double(ammoCapacity) * AmmunitionPickupConfig.refillFraction).rounded()))
+        let previous = ammoRemaining
+        ammoRemaining = min(ammoCapacity, ammoRemaining + bonus)
+        let added = ammoRemaining - previous
+        onAmmoChange?(ammoRemaining, ammoCapacity)
+        if added > 0 {
+            onAmmoPickupCollected?(added)
+        }
+    }
+
+    private func addAmmoCollectionBurst(at position: SCNVector3) {
+        let burst = SCNNode(geometry: SCNSphere(radius: 0.2))
+        let material = SCNMaterial()
+        material.diffuse.contents = UIColor(red: 0.95, green: 0.75, blue: 0.25, alpha: 1)
+        material.emission.contents = UIColor(red: 0.85, green: 0.6, blue: 0.15, alpha: 1)
+        burst.geometry?.materials = [material]
+        burst.position = position
+        worldNode.addChildNode(burst)
+
+        let grow = SCNAction.scale(to: 2.2, duration: 0.16)
+        let fade = SCNAction.fadeOut(duration: 0.16)
+        burst.runAction(SCNAction.sequence([SCNAction.group([grow, fade]), .removeFromParentNode()]))
+    }
+
     private func fireBullet() {
-        let bullet = SCNNode(geometry: SCNSphere(radius: 0.22))
+        guard ammoRemaining > 0 else { return }
+
+        ammoRemaining -= 1
+        onAmmoChange?(ammoRemaining, ammoCapacity)
+        prioritizeAmmoPickupIfNeeded()
+
+        let bullet = SCNNode(geometry: SCNSphere(radius: CGFloat(bulletHitRadius)))
         let material = SCNMaterial()
         material.diffuse.contents = UIColor(red: 1, green: 0.92, blue: 0.2, alpha: 1)
         material.emission.contents = UIColor(red: 0.9, green: 0.7, blue: 0.1, alpha: 1)
         bullet.geometry?.materials = [material]
         bullet.name = "bullet"
 
+        let direction = aimDirection()
         let muzzle = playerRoot.presentation.worldPosition
-        bullet.position = SCNVector3(muzzle.x, muzzle.y, muzzle.z + 2.4)
+        let spawnOffset: Float = 2.4
+        bullet.position = SCNVector3(
+            muzzle.x + direction.x * spawnOffset,
+            muzzle.y + direction.y * spawnOffset,
+            muzzle.z + direction.z * spawnOffset
+        )
         scene.rootNode.addChildNode(bullet)
 
         let worldPosition = bullet.presentation.worldPosition
         activeBullets.append(
             ActiveBullet(
                 node: bullet,
+                direction: direction,
                 traveled: 0,
                 previousWorldPosition: worldPosition
             )
@@ -573,12 +805,14 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         guard !activeBullets.isEmpty else { return }
 
         let step = bulletSpeed * delta
-        let hitRadius = enemyHitRadius + bulletHitRadius
+        let hitRadius = asteroidHitRadius + bulletHitRadius
         var remainingBullets: [ActiveBullet] = []
 
         for var bullet in activeBullets {
             let startPosition = bullet.node.presentation.worldPosition
-            bullet.node.position.z += step
+            bullet.node.position.x += bullet.direction.x * step
+            bullet.node.position.y += bullet.direction.y * step
+            bullet.node.position.z += bullet.direction.z * step
             bullet.traveled += step
 
             let endPosition = bullet.node.presentation.worldPosition
@@ -625,11 +859,35 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     }
 
     private func handleBulletHit(enemy: SCNNode) {
+        let id = ObjectIdentifier(enemy)
+        var hitsLeft = asteroidHitsRemaining[id] ?? levelConfig.hitsPerAsteroid
+        hitsLeft -= 1
+
+        if hitsLeft > 0 {
+            asteroidHitsRemaining[id] = hitsLeft
+            addHitSpark(at: enemy.presentation.worldPosition)
+            return
+        }
+
+        unregisterAsteroidHits(enemy)
         addExplosion(at: enemy.presentation.worldPosition)
         enemy.removeFromParentNode()
         missionScoreTracker.recordKill()
-        onScoreChange?(missionScoreTracker.displayedScore)
         registerKill()
+    }
+
+    private func addHitSpark(at position: SCNVector3) {
+        let spark = SCNNode(geometry: SCNSphere(radius: 0.15))
+        let material = SCNMaterial()
+        material.diffuse.contents = UIColor(red: 1, green: 0.75, blue: 0.2, alpha: 1)
+        material.emission.contents = UIColor.orange
+        spark.geometry?.materials = [material]
+        spark.position = position
+        worldNode.addChildNode(spark)
+
+        let grow = SCNAction.scale(to: 1.6, duration: 0.1)
+        let fade = SCNAction.fadeOut(duration: 0.1)
+        spark.runAction(SCNAction.sequence([SCNAction.group([grow, fade]), .removeFromParentNode()]))
     }
 
     private func segmentIntersectsSphere(
@@ -693,6 +951,15 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             return
         }
 
+        if maskA == PhysicsCategory.player && maskB == PhysicsCategory.ammoPickup {
+            collectAmmoPickup(contact.nodeB)
+            return
+        }
+        if maskB == PhysicsCategory.player && maskA == PhysicsCategory.ammoPickup {
+            collectAmmoPickup(contact.nodeA)
+            return
+        }
+
     }
 
     private func registerKill() {
@@ -739,6 +1006,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
 private struct ActiveBullet {
     let node: SCNNode
+    let direction: SCNVector3
     var traveled: Float
     var previousWorldPosition: SCNVector3
 }

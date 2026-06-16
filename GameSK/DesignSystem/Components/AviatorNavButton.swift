@@ -4,7 +4,7 @@ final class AviatorNavButton: UIControl {
 
     enum Style {
         case compact(symbol: String, accessibilityLabel: String? = nil)
-        case labeled(symbol: String, title: String)
+        case labeled(symbol: String? = nil, title: String)
     }
 
     private let backgroundPanel = UIView()
@@ -115,7 +115,13 @@ final class AviatorNavButton: UIControl {
             widthConstraint?.constant = 44
 
         case let .labeled(symbol, title):
-            iconView.image = UIImage(systemName: symbol)
+            if let symbol, !symbol.isEmpty {
+                iconView.image = UIImage(systemName: symbol)
+                iconView.isHidden = false
+            } else {
+                iconView.image = nil
+                iconView.isHidden = true
+            }
             titleLabel.text = title.uppercased()
             titleLabel.isHidden = false
             accessibilityLabel = title

@@ -28,7 +28,7 @@ final class HangarShopViewController: UIViewController {
     private let progressTrack = UIView()
     private let progressFill = UIView()
     private var progressFillWidth: NSLayoutConstraint?
-    private let backButton = AviatorNavButton(style: .labeled(symbol: "chevron.left", title: "Back"))
+    private let backButton = AviatorNavButton(style: .labeled(title: "Back"))
     private let creditsBadge = HangarCreditsBadge()
     private var collectionView: UICollectionView!
 

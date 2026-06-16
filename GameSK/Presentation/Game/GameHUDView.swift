@@ -7,13 +7,13 @@ final class GameHUDView: UIView {
 
     private let levelTitleLabel = UILabel()
     private let statsRow = UIStackView()
-    private let statsPanel = UIView()
-    private let progressLabel = UILabel()
-    private let scoreBadge = MissionScoreBadge()
-    private let fuelGauge = FuelGaugeView()
+    private let targetsBadge = MissionTargetsBadge()
+    private let ammoBadge = MissionAmmoBadge()
+    private let fuelBadge = MissionFuelBadge()
     private let fuelPickupBanner = UILabel()
+    private let ammoPickupBanner = UILabel()
 
-    let pauseButton = AviatorNavButton(style: .labeled(symbol: "pause.fill", title: "Pause"))
+    let pauseButton = AviatorNavButton(style: .labeled(title: "Menu"))
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -40,18 +40,9 @@ final class GameHUDView: UIView {
         levelTitleLabel.textAlignment = .center
 
         statsRow.axis = .horizontal
-        statsRow.alignment = .fill
-        statsRow.distribution = .fillEqually
-        statsRow.spacing = 10
-
-        statsPanel.translatesAutoresizingMaskIntoConstraints = false
-        GameStyle.stylePanel(statsPanel, cornerRadius: 12)
-
-        progressLabel.translatesAutoresizingMaskIntoConstraints = false
-        GameStyle.styleSubtitleLabel(progressLabel, size: 15)
-        progressLabel.text = "Destroyed: 0 / 10"
-
-        fuelGauge.translatesAutoresizingMaskIntoConstraints = false
+        statsRow.alignment = .center
+        statsRow.distribution = .equalSpacing
+        statsRow.spacing = 8
 
         fuelPickupBanner.translatesAutoresizingMaskIntoConstraints = false
         fuelPickupBanner.text = "+30%"
@@ -65,18 +56,29 @@ final class GameHUDView: UIView {
         fuelPickupBanner.layer.shadowRadius = 4
         fuelPickupBanner.layer.shadowOffset = CGSize(width: 0, height: 2)
 
+        ammoPickupBanner.translatesAutoresizingMaskIntoConstraints = false
+        ammoPickupBanner.text = "+0"
+        ammoPickupBanner.textAlignment = .center
+        ammoPickupBanner.alpha = 0
+        ammoPickupBanner.isHidden = true
+        GameStyle.styleHUDLabel(ammoPickupBanner, size: 28, weight: .heavy)
+        ammoPickupBanner.textColor = GameStyle.gaugeAmber
+        ammoPickupBanner.layer.shadowColor = UIColor.black.cgColor
+        ammoPickupBanner.layer.shadowOpacity = 0.45
+        ammoPickupBanner.layer.shadowRadius = 4
+        ammoPickupBanner.layer.shadowOffset = CGSize(width: 0, height: 2)
+
         topRow.addSubview(pauseButton)
         topRow.addSubview(levelTitleLabel)
-        topRow.addSubview(scoreBadge)
 
-        statsPanel.addSubview(progressLabel)
-
-        statsRow.addArrangedSubview(statsPanel)
-        statsRow.addArrangedSubview(fuelGauge)
+        statsRow.addArrangedSubview(ammoBadge)
+        statsRow.addArrangedSubview(fuelBadge)
+        statsRow.addArrangedSubview(targetsBadge)
 
         hudStack.addArrangedSubview(topRow)
         hudStack.addArrangedSubview(statsRow)
         addSubview(fuelPickupBanner)
+        addSubview(ammoPickupBanner)
         addSubview(hudStack)
 
         NSLayoutConstraint.activate([
@@ -89,9 +91,6 @@ final class GameHUDView: UIView {
             pauseButton.leadingAnchor.constraint(equalTo: topRow.leadingAnchor),
             pauseButton.centerYAnchor.constraint(equalTo: topRow.centerYAnchor),
 
-            scoreBadge.trailingAnchor.constraint(equalTo: topRow.trailingAnchor),
-            scoreBadge.centerYAnchor.constraint(equalTo: topRow.centerYAnchor),
-
             levelTitleLabel.centerXAnchor.constraint(equalTo: topRow.centerXAnchor),
             levelTitleLabel.centerYAnchor.constraint(equalTo: topRow.centerYAnchor),
             levelTitleLabel.leadingAnchor.constraint(
@@ -99,19 +98,20 @@ final class GameHUDView: UIView {
                 constant: 8
             ),
             levelTitleLabel.trailingAnchor.constraint(
-                lessThanOrEqualTo: scoreBadge.leadingAnchor,
+                lessThanOrEqualTo: topRow.trailingAnchor,
                 constant: -8
             ),
 
-            progressLabel.topAnchor.constraint(equalTo: statsPanel.topAnchor, constant: 10),
-            progressLabel.leadingAnchor.constraint(equalTo: statsPanel.leadingAnchor, constant: 12),
-            progressLabel.trailingAnchor.constraint(equalTo: statsPanel.trailingAnchor, constant: -12),
-            progressLabel.bottomAnchor.constraint(equalTo: statsPanel.bottomAnchor, constant: -10),
+            statsRow.heightAnchor.constraint(equalToConstant: 40),
 
-            statsRow.heightAnchor.constraint(equalToConstant: 44),
+            fuelPickupBanner.centerXAnchor.constraint(equalTo: centerXAnchor),
+            fuelPickupBanner.centerYAnchor.constraint(
+                equalTo: safeAreaLayoutGuide.centerYAnchor,
+                constant: -52
+            ),
 
-            fuelPickupBanner.centerXAnchor.constraint(equalTo: fuelGauge.centerXAnchor),
-            fuelPickupBanner.bottomAnchor.constraint(equalTo: fuelGauge.topAnchor, constant: -6)
+            ammoPickupBanner.centerXAnchor.constraint(equalTo: ammoBadge.centerXAnchor),
+            ammoPickupBanner.bottomAnchor.constraint(equalTo: ammoBadge.topAnchor, constant: -6)
         ])
     }
 
@@ -121,15 +121,45 @@ final class GameHUDView: UIView {
 
     func updateLevelProgress(level: Int, destroyed: Int, required: Int) {
         levelTitleLabel.text = "Level \(level)"
-        progressLabel.text = "Destroyed: \(destroyed) / \(required)"
+        targetsBadge.update(destroyed: destroyed, required: required)
     }
 
-    func updateScore(_ score: Int) {
-        scoreBadge.update(score: score)
+    func refreshAsteroidIcon() {
+        targetsBadge.refreshAsteroidIcon()
+    }
+
+    func updateAmmo(remaining: Int, capacity: Int) {
+        ammoBadge.update(remaining: remaining, capacity: capacity)
+    }
+
+    func refreshAmmunitionIcon() {
+        ammoBadge.refreshAmmunitionIcon()
+    }
+
+    func showAmmoPickupBonus(added: Int) {
+        ammoPickupBanner.text = "+\(added)"
+        ammoPickupBanner.isHidden = false
+        ammoPickupBanner.alpha = 0
+        ammoPickupBanner.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
+
+        UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseOut]) {
+            self.ammoPickupBanner.alpha = 1
+            self.ammoPickupBanner.transform = .identity
+        }
+
+        UIView.animate(
+            withDuration: 0.28,
+            delay: AmmunitionPickupConfig.pickupBannerDuration - 0.28,
+            options: [.curveEaseIn]
+        ) {
+            self.ammoPickupBanner.alpha = 0
+        } completion: { _ in
+            self.ammoPickupBanner.isHidden = true
+        }
     }
 
     func updateFuel(remaining: TimeInterval, total: TimeInterval, afterburnerActive: Bool = false) {
-        fuelGauge.update(remaining: remaining, total: total, afterburnerActive: afterburnerActive)
+        fuelBadge.update(remaining: remaining, total: total, afterburnerActive: afterburnerActive)
     }
 
     func showFuelPickupBonus(percent: Int = Int(FuelPickupConfig.refillFraction * 100)) {
@@ -143,7 +173,7 @@ final class GameHUDView: UIView {
             self.fuelPickupBanner.transform = .identity
         }
 
-        fuelGauge.flashPickupRefill()
+        fuelBadge.flashPickupRefill()
 
         UIView.animate(
             withDuration: 0.28,
