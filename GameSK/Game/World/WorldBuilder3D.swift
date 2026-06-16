@@ -52,7 +52,7 @@ enum WorldBuilder3D {
         lastPlayerY = playerPosition.y
 
         starOffsetX += -playerDeltaX * 0.007
-        starOffsetY += -playerDeltaY * 0.007
+        starOffsetY += playerDeltaY * 0.007
         starOffsetX += delta * 0.0035 * forwardRate
         starOffsetY += delta * 0.0028 * forwardRate
 
