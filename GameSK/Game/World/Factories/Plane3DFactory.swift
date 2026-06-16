@@ -12,12 +12,19 @@ enum Plane3DFactory {
 
     private static var flightPlaneTemplates: [String: PlaneAssembly] = [:]
 
-    /// Normalized model size so plane1 and plane2 match in-game proportions.
+    /// Normalized model span for fighters (plane2 baseline).
     private static let modelTargetSpan: Float = 3.8
+
+    /// Scout Mk.I (plane1) is ~15% smaller than other fighters.
+    private static let plane1ScaleFactor: Float = 0.85
 
     /// UI previews use a larger display scale than gameplay.
     static let shopPreviewScale: Float = 3.15
     static let menuPreviewScale: Float = 2.7
+
+    private static func targetSpan(for resourceName: String) -> Float {
+        resourceName == "plane1" ? modelTargetSpan * plane1ScaleFactor : modelTargetSpan
+    }
 
     /// Plane for forward flight — nose points along +Z.
     static func makeFlightPlane(for planeID: Int) -> PlaneAssembly {
@@ -29,12 +36,12 @@ enum Plane3DFactory {
             return cloneAssembly(template)
         }
         if let scene = loadUSDZ(named: resourceName) {
-            return buildFromUSDZ(scene, resourceName: resourceName, targetSpan: modelTargetSpan)
+            return buildFromUSDZ(scene, resourceName: resourceName, targetSpan: targetSpan(for: resourceName))
         }
         if resourceName != "plane1" {
             return makeFlightPlane(forResource: "plane1")
         }
-        return buildProcedural(targetSpan: modelTargetSpan)
+        return buildProcedural(targetSpan: targetSpan(for: "plane1"))
     }
 
     static func prepareFlightPlane() {
@@ -43,7 +50,7 @@ enum Plane3DFactory {
                 flightPlaneTemplates[resourceName] = buildFromUSDZ(
                     scene,
                     resourceName: resourceName,
-                    targetSpan: modelTargetSpan
+                    targetSpan: targetSpan(for: resourceName)
                 )
             }
         }

@@ -20,6 +20,22 @@ enum AsteroidFactory {
         return asteroid
     }
 
+    static func makeTumbleAction() -> SCNAction {
+        func signedAngle(_ range: ClosedRange<CGFloat>) -> CGFloat {
+            let magnitude = CGFloat.random(in: range)
+            return Bool.random() ? magnitude : -magnitude
+        }
+
+        let duration = Double.random(in: 3.0...7.0)
+        let tumble = SCNAction.rotateBy(
+            x: signedAngle(0.35...1.1),
+            y: signedAngle(0.45...1.3),
+            z: signedAngle(0.25...1.0),
+            duration: duration
+        )
+        return .repeatForever(tumble)
+    }
+
     private static let minSpawnDistance: Float = 200
     private static let maxSpawnDistance: Float = 450
     private static let cameraVerticalFOV: Float = 58 * .pi / 180

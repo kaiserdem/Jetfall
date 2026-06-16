@@ -391,13 +391,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         body.collisionBitMask = PhysicsCategory.none
         asteroid.physicsBody = body
 
-        let tumble = SCNAction.rotateBy(
-            x: CGFloat.random(in: 0.4...1.2),
-            y: CGFloat.random(in: 0.6...1.4),
-            z: CGFloat.random(in: 0.3...0.9),
-            duration: Double.random(in: 2.5...4.5)
-        )
-        asteroid.runAction(.repeatForever(tumble))
+        asteroid.runAction(AsteroidFactory.makeTumbleAction())
 
         worldNode.addChildNode(asteroid)
     }
