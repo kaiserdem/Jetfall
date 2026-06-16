@@ -31,10 +31,8 @@ final class MissionFuelBadge: UIView {
 
         iconView.translatesAutoresizingMaskIntoConstraints = false
         iconView.contentMode = .scaleAspectFit
-        iconView.image = UIImage(systemName: "fuelpump.fill")
-        iconView.tintColor = GameStyle.gaugeAmber
-        iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 13, weight: .bold)
         iconView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        applyFuelIcon()
 
         valueLabel.translatesAutoresizingMaskIntoConstraints = false
         valueLabel.font = .monospacedDigitSystemFont(ofSize: 15, weight: .bold)
@@ -47,15 +45,15 @@ final class MissionFuelBadge: UIView {
         addSubview(contentStack)
 
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(equalToConstant: 32),
+            heightAnchor.constraint(equalToConstant: 40),
 
             contentStack.topAnchor.constraint(equalTo: topAnchor),
             contentStack.leadingAnchor.constraint(equalTo: leadingAnchor),
             contentStack.trailingAnchor.constraint(equalTo: trailingAnchor),
             contentStack.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            iconView.widthAnchor.constraint(equalToConstant: 26),
-            iconView.heightAnchor.constraint(equalToConstant: 26)
+            iconView.widthAnchor.constraint(equalToConstant: 36),
+            iconView.heightAnchor.constraint(equalToConstant: 36)
         ])
     }
 
@@ -63,13 +61,30 @@ final class MissionFuelBadge: UIView {
         let safeTotal = max(total, 0.01)
         let fraction = max(0, min(1, remaining / safeTotal))
         valueLabel.text = "\(Int(round(fraction * 100)))%"
-        valueLabel.textColor = fraction <= 0.2
-            ? GameStyle.gaugeLowRed
-            : GameStyle.textPrimary
-        iconView.tintColor = afterburnerActive
-            ? GameStyle.gaugeAmber
-            : GameStyle.gaugeAmber.withAlphaComponent(0.9)
+        if afterburnerActive {
+            valueLabel.textColor = GameStyle.gaugeAmber
+        } else {
+            valueLabel.textColor = fraction <= 0.2
+                ? GameStyle.gaugeLowRed
+                : GameStyle.textPrimary
+        }
         accessibilityLabel = "Fuel \(valueLabel.text ?? "")"
+    }
+
+    func refreshFuelIcon() {
+        applyFuelIcon()
+    }
+
+    private func applyFuelIcon() {
+        iconView.image = UIImage(systemName: "fuelpump.fill")
+        iconView.tintColor = GameStyle.gaugeAmber
+        iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 15, weight: .bold)
+
+        FuelPickupFactory.prepareHUDIcon { [weak self] image in
+            guard let self, let image else { return }
+            self.iconView.image = image
+            self.iconView.tintColor = nil
+        }
     }
 
     func flashPickupRefill(duration: TimeInterval = FuelPickupConfig.refillBannerDuration) {

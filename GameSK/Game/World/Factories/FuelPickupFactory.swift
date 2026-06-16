@@ -1,8 +1,11 @@
+import Metal
 import SceneKit
+import UIKit
 
 enum FuelPickupFactory {
 
     private static var template: SCNNode?
+    private static var cachedHUDIcon: UIImage?
 
     private static let resourceName = "gas"
     private static let targetSpan: Float = 2.1
@@ -37,6 +40,57 @@ enum FuelPickupFactory {
             preferredDistance: Float.random(in: 220...340),
             avoiding: []
         )
+    }
+
+    static func hudIconImage() -> UIImage? {
+        if let cachedHUDIcon {
+            return cachedHUDIcon
+        }
+        prepareTemplate()
+        guard let template else { return nil }
+        guard let image = renderHUDIcon(from: template) else { return nil }
+        cachedHUDIcon = image
+        return image
+    }
+
+    static func prepareHUDIcon(completion: ((UIImage?) -> Void)? = nil) {
+        func run() {
+            completion?(hudIconImage())
+        }
+        if Thread.isMainThread {
+            run()
+        } else {
+            DispatchQueue.main.async(execute: run)
+        }
+    }
+
+    private static func renderHUDIcon(from template: SCNNode) -> UIImage? {
+        let scene = SCNScene()
+        let model = template.clone()
+        isolateMaterials(in: model)
+        model.eulerAngles = SCNVector3(-0.12, 0.68, 0.08)
+        scene.rootNode.addChildNode(model)
+
+        let span = targetSpan
+        let cameraNode = SCNNode()
+        let camera = SCNCamera()
+        camera.fieldOfView = 40
+        camera.zNear = 0.01
+        camera.zFar = 30
+        cameraNode.camera = camera
+        cameraNode.position = SCNVector3(0, span * 0.08, span * 2.4)
+        cameraNode.look(at: SCNVector3Zero)
+        scene.rootNode.addChildNode(cameraNode)
+
+        Plane3DFactory.addLights(to: scene.rootNode)
+
+        guard let device = MTLCreateSystemDefaultDevice() else { return nil }
+        let renderer = SCNRenderer(device: device, options: nil)
+        renderer.scene = scene
+        renderer.pointOfView = cameraNode
+
+        let size = CGSize(width: 72, height: 72)
+        return renderer.snapshot(atTime: 0, with: size, antialiasingMode: .multisampling4X)
     }
 
     private static func isolateMaterials(in node: SCNNode) {

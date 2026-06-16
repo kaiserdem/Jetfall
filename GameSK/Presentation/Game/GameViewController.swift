@@ -104,16 +104,17 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         view.addSubview(boostButtonView)
 
         let sideInset: CGFloat = 20
-        let bottomInset: CGFloat = 38
+        // Distance above the safe-area bottom. Smaller values move controls closer to the screen edge.
+        let controlsBottomPadding: CGFloat = -12
 
         NSLayoutConstraint.activate([
             dPadView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -sideInset),
-            dPadView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -bottomInset),
+            dPadView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -controlsBottomPadding),
             dPadView.widthAnchor.constraint(equalToConstant: 190),
             dPadView.heightAnchor.constraint(equalToConstant: 190),
 
             fireButtonView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: sideInset),
-            fireButtonView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -bottomInset),
+            fireButtonView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -controlsBottomPadding),
             fireButtonView.widthAnchor.constraint(equalToConstant: 88),
             fireButtonView.heightAnchor.constraint(equalToConstant: 88),
 
@@ -206,6 +207,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         GameAssetLoader.shared.whenReady { [weak self] in
             self?.hudView.refreshAmmunitionIcon()
             self?.hudView.refreshAsteroidIcon()
+            self?.hudView.refreshFuelIcon()
         }
         isPauseMenuVisible = false
         pauseMenuView.hide(animated: false)

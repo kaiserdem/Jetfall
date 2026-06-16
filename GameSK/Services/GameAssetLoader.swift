@@ -51,6 +51,7 @@ final class GameAssetLoader {
                 WorldBuilder3D.installStarsTexture(starsImage)
                 AmmunitionPickupFactory.prepareHUDIcon()
                 AsteroidFactory.prepareHUDIcon()
+                FuelPickupFactory.prepareHUDIcon()
                 self.reportProgress(1)
                 self.finishLoading()
             }
