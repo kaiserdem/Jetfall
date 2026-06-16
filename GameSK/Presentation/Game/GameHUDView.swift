@@ -4,13 +4,12 @@ final class GameHUDView: UIView {
 
     private let hudStack = UIStackView()
     private let topRow = UIView()
-    private let topTrailingSpacer = UIView()
 
     private let levelTitleLabel = UILabel()
     private let statsRow = UIStackView()
     private let statsPanel = UIView()
     private let progressLabel = UILabel()
-    private let scoreLabel = UILabel()
+    private let scoreBadge = MissionScoreBadge()
     private let fuelGauge = FuelGaugeView()
     private let fuelPickupBanner = UILabel()
 
@@ -34,8 +33,6 @@ final class GameHUDView: UIView {
         hudStack.spacing = 10
 
         topRow.translatesAutoresizingMaskIntoConstraints = false
-        topTrailingSpacer.translatesAutoresizingMaskIntoConstraints = false
-        topTrailingSpacer.isUserInteractionEnabled = false
 
         levelTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         GameStyle.styleHUDLabel(levelTitleLabel, size: 20, weight: .heavy)
@@ -54,10 +51,6 @@ final class GameHUDView: UIView {
         GameStyle.styleSubtitleLabel(progressLabel, size: 15)
         progressLabel.text = "Destroyed: 0 / 10"
 
-        scoreLabel.translatesAutoresizingMaskIntoConstraints = false
-        GameStyle.styleSubtitleLabel(scoreLabel, size: 15)
-        scoreLabel.text = "Score: 0"
-
         fuelGauge.translatesAutoresizingMaskIntoConstraints = false
 
         fuelPickupBanner.translatesAutoresizingMaskIntoConstraints = false
@@ -74,10 +67,9 @@ final class GameHUDView: UIView {
 
         topRow.addSubview(pauseButton)
         topRow.addSubview(levelTitleLabel)
-        topRow.addSubview(topTrailingSpacer)
+        topRow.addSubview(scoreBadge)
 
         statsPanel.addSubview(progressLabel)
-        statsPanel.addSubview(scoreLabel)
 
         statsRow.addArrangedSubview(statsPanel)
         statsRow.addArrangedSubview(fuelGauge)
@@ -97,10 +89,8 @@ final class GameHUDView: UIView {
             pauseButton.leadingAnchor.constraint(equalTo: topRow.leadingAnchor),
             pauseButton.centerYAnchor.constraint(equalTo: topRow.centerYAnchor),
 
-            topTrailingSpacer.trailingAnchor.constraint(equalTo: topRow.trailingAnchor),
-            topTrailingSpacer.centerYAnchor.constraint(equalTo: topRow.centerYAnchor),
-            topTrailingSpacer.widthAnchor.constraint(equalTo: pauseButton.widthAnchor),
-            topTrailingSpacer.heightAnchor.constraint(equalTo: pauseButton.heightAnchor),
+            scoreBadge.trailingAnchor.constraint(equalTo: topRow.trailingAnchor),
+            scoreBadge.centerYAnchor.constraint(equalTo: topRow.centerYAnchor),
 
             levelTitleLabel.centerXAnchor.constraint(equalTo: topRow.centerXAnchor),
             levelTitleLabel.centerYAnchor.constraint(equalTo: topRow.centerYAnchor),
@@ -109,20 +99,16 @@ final class GameHUDView: UIView {
                 constant: 8
             ),
             levelTitleLabel.trailingAnchor.constraint(
-                lessThanOrEqualTo: topTrailingSpacer.leadingAnchor,
+                lessThanOrEqualTo: scoreBadge.leadingAnchor,
                 constant: -8
             ),
 
             progressLabel.topAnchor.constraint(equalTo: statsPanel.topAnchor, constant: 10),
             progressLabel.leadingAnchor.constraint(equalTo: statsPanel.leadingAnchor, constant: 12),
             progressLabel.trailingAnchor.constraint(equalTo: statsPanel.trailingAnchor, constant: -12),
+            progressLabel.bottomAnchor.constraint(equalTo: statsPanel.bottomAnchor, constant: -10),
 
-            scoreLabel.topAnchor.constraint(equalTo: progressLabel.bottomAnchor, constant: 4),
-            scoreLabel.leadingAnchor.constraint(equalTo: progressLabel.leadingAnchor),
-            scoreLabel.trailingAnchor.constraint(equalTo: progressLabel.trailingAnchor),
-            scoreLabel.bottomAnchor.constraint(equalTo: statsPanel.bottomAnchor, constant: -10),
-
-            statsRow.heightAnchor.constraint(equalToConstant: 58),
+            statsRow.heightAnchor.constraint(equalToConstant: 44),
 
             fuelPickupBanner.centerXAnchor.constraint(equalTo: fuelGauge.centerXAnchor),
             fuelPickupBanner.bottomAnchor.constraint(equalTo: fuelGauge.topAnchor, constant: -6)
@@ -139,7 +125,7 @@ final class GameHUDView: UIView {
     }
 
     func updateScore(_ score: Int) {
-        scoreLabel.text = "Score: \(score)"
+        scoreBadge.update(score: score)
     }
 
     func updateFuel(remaining: TimeInterval, total: TimeInterval, afterburnerActive: Bool = false) {

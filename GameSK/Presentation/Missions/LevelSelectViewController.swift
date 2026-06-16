@@ -398,7 +398,7 @@ final class LevelSelectViewController: UIViewController {
         let isUnlocked = LevelProgressStore.isUnlocked(focusedLevel)
         let isCompleted = isUnlocked && focusedLevel < highest
         let isCurrent = isUnlocked && focusedLevel == highest
-        let missionStats = "Targets: \(config.asteroidsToDestroy) · Fuel: \(Int(config.fuelDuration))s"
+        let missionStats = "Targets: \(config.asteroidsToDestroy)"
         let bestScore = MissionScoreStore.bestScore(for: focusedLevel)
         let bestScoreNote = bestScore > 0 ? "Best score \(bestScore)" : nil
 
@@ -592,8 +592,7 @@ extension LevelSelectViewController: UICollectionViewDataSource, UICollectionVie
         cell.configure(
             level: level,
             isUnlocked: LevelProgressStore.isUnlocked(level),
-            asteroids: config.asteroidsToDestroy,
-            fuelSeconds: Int(config.fuelDuration)
+            asteroids: config.asteroidsToDestroy
         )
         return cell
     }

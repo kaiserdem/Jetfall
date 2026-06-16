@@ -15,7 +15,7 @@ enum LevelConfigFactory {
         let number = max(1, min(totalLevels, level))
         let progress = Float(number - 1) / Float(totalLevels - 1)
 
-        let asteroidsToDestroy = 10 + Int(round(progress * 20))
+        let asteroidsToDestroy = 20 + Int(round(progress * 30))
         let approachSpeed = 24 + progress * 24
         let fuelDuration = TimeInterval(120 - Double(progress) * 50)
 

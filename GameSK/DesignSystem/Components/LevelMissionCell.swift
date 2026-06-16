@@ -17,7 +17,6 @@ final class LevelMissionCell: UICollectionViewCell {
     private let unlockRequirementLabel = UILabel()
     private let objectivesCaptionLabel = UILabel()
     private let targetsChip = MissionStatChipView(symbol: "scope", title: "TARGETS")
-    private let fuelChip = MissionStatChipView(symbol: "fuelpump.fill", title: "FUEL")
     private var lockedInfoCollapsedHeight: NSLayoutConstraint?
 
     override init(frame: CGRect) {
@@ -118,7 +117,6 @@ final class LevelMissionCell: UICollectionViewCell {
         lockedInfoStack.addArrangedSubview(objectivesCaptionLabel)
 
         targetsChip.translatesAutoresizingMaskIntoConstraints = false
-        fuelChip.translatesAutoresizingMaskIntoConstraints = false
 
         shadowWrapper.insertSubview(glowView, at: 0)
         shadowWrapper.addSubview(cardView)
@@ -130,7 +128,6 @@ final class LevelMissionCell: UICollectionViewCell {
         cardView.addSubview(statusBadge)
         cardView.addSubview(lockedInfoStack)
         cardView.addSubview(targetsChip)
-        cardView.addSubview(fuelChip)
 
         lockedInfoCollapsedHeight = lockedInfoStack.heightAnchor.constraint(equalToConstant: 0)
 
@@ -173,19 +170,13 @@ final class LevelMissionCell: UICollectionViewCell {
             targetsChip.topAnchor.constraint(greaterThanOrEqualTo: lockedInfoStack.bottomAnchor, constant: 8),
             targetsChip.leadingAnchor.constraint(equalTo: missionTag.leadingAnchor),
             targetsChip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
-            targetsChip.bottomAnchor.constraint(equalTo: fuelChip.topAnchor, constant: -6),
-
-            fuelChip.leadingAnchor.constraint(equalTo: missionTag.leadingAnchor),
-            fuelChip.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
-            fuelChip.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12)
+            targetsChip.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12)
         ])
     }
 
-    func configure(level: Int, isUnlocked: Bool, asteroids: Int, fuelSeconds: Int) {
+    func configure(level: Int, isUnlocked: Bool, asteroids: Int) {
         numberLabel.text = String(format: "%02d", level)
         targetsChip.setValue("\(asteroids)")
-        let fuelPercent = Int(round(Double(fuelSeconds) / 120.0 * 100))
-        fuelChip.setValue("\(fuelPercent)%")
 
         let highest = LevelProgressStore.highestUnlockedLevel
         let isCompleted = isUnlocked && level < highest
@@ -195,10 +186,8 @@ final class LevelMissionCell: UICollectionViewCell {
         lockedInfoCollapsedHeight?.isActive = isUnlocked
 
         targetsChip.setMuted(!isUnlocked)
-        fuelChip.setMuted(!isUnlocked)
 
         targetsChip.isHidden = false
-        fuelChip.isHidden = false
 
         if !isUnlocked {
             applyLockedStyle(level: level)
