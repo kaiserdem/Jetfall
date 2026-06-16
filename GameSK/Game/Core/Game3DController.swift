@@ -21,6 +21,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private(set) var isPaused = false
     private var lastUpdateTime: TimeInterval = 0
     private var asteroidSpawnTimer: TimeInterval = 0
+    private var fuelPickupSpawnTimer: TimeInterval = 0
+    private var nextFuelPickupSpawnDelay: TimeInterval = 0
     private var fireTimer: TimeInterval = 0
     private var currentBankAngle: Float = 0
     private var currentPitchAngle: Float = 0
@@ -41,14 +43,15 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private let propellerSpeed: Float = 24
     private let bulletRange: Float = 400
     private let bulletSpeed: Float = 320
-    private let enemyHitRadius: Float = 2.1
-    private let bulletHitRadius: Float = 0.35
+    private let enemyHitRadius: Float = 1.05
+    private let bulletHitRadius: Float = 0.22
     private var activeBullets: [ActiveBullet] = []
     private let planeCruiseMultiplier: Float
 
     var onScoreChange: ((Int) -> Void)?
     var onLevelProgress: ((Int, Int, Int) -> Void)?
     var onFuelChange: ((TimeInterval, TimeInterval, Bool) -> Void)?
+    var onFuelPickupCollected: (() -> Void)?
     var onLevelComplete: ((Int, Bool, MissionScoreResult) -> Void)?
     var onGameOver: ((Int, Bool) -> Void)?
     var onVictory: ((MissionScoreResult) -> Void)?
@@ -105,7 +108,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         let shape = SCNPhysicsShape(geometry: playerBox)
         let body = SCNPhysicsBody(type: .kinematic, shape: shape)
         body.categoryBitMask = PhysicsCategory.player
-        body.contactTestBitMask = PhysicsCategory.enemy
+        body.contactTestBitMask = PhysicsCategory.enemy | PhysicsCategory.fuelPickup
         body.collisionBitMask = PhysicsCategory.none
         playerRoot.physicsBody = body
 
@@ -180,6 +183,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         isBoosting = false
         fireTimer = 0
         asteroidSpawnTimer = 0
+        fuelPickupSpawnTimer = 0
+        scheduleNextFuelPickupSpawn(initial: true)
         activeDirections = []
         currentBankAngle = 0
         currentPitchAngle = 0
@@ -194,10 +199,17 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         onFuelChange?(fuelRemaining, levelConfig.fuelDuration, false)
 
         clearEnemies()
+        clearFuelPickups()
         clearBullets()
         cometEffects.reset()
         spawnInitialAsteroids()
         notifyLevelProgress()
+    }
+
+    private func clearFuelPickups() {
+        worldNode.childNodes
+            .filter { $0.name == "fuelPickup" }
+            .forEach { $0.removeFromParentNode() }
     }
 
     private func clearEnemies() {
@@ -310,6 +322,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         updateCamera(delta: delta)
         scrollWorld(delta: delta)
         updateBullets(delta: delta)
+        checkFuelPickupCollection()
         updateFuel(delta: delta)
         cometEffects.update(delta: delta, anchor: playerRoot.position)
 
@@ -320,6 +333,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             asteroidSpawnTimer = 0
             spawnAsteroid()
         }
+        updateFuelPickupSpawning(delta: delta)
         if isFiring, fireTimer >= 0.22 {
             fireTimer = 0
             fireBullet()
@@ -389,9 +403,17 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         for node in worldNode.childNodes {
             node.position.z -= offset
             if node.position.z < -15 {
+                if node.name == "fuelPickup" {
+                    scheduleMissedFuelPickupRetry()
+                }
                 node.removeFromParentNode()
             }
         }
+    }
+
+    private func scheduleMissedFuelPickupRetry() {
+        fuelPickupSpawnTimer = 0
+        nextFuelPickupSpawnDelay = TimeInterval.random(in: 22...36)
     }
 
     // MARK: - Spawning
@@ -423,6 +445,106 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         asteroid.runAction(AsteroidFactory.makeTumbleAction())
 
         worldNode.addChildNode(asteroid)
+    }
+
+    // MARK: - Fuel pickups
+
+    private func scheduleNextFuelPickupSpawn(initial: Bool) {
+        if initial {
+            nextFuelPickupSpawnDelay = TimeInterval.random(
+                in: FuelPickupConfig.initialSpawnDelayRange
+            )
+        } else {
+            nextFuelPickupSpawnDelay = TimeInterval.random(
+                in: FuelPickupConfig.minSpawnInterval...FuelPickupConfig.maxSpawnInterval
+            )
+        }
+    }
+
+    private func updateFuelPickupSpawning(delta: Float) {
+        let hasPickup = worldNode.childNodes.contains { $0.name == "fuelPickup" }
+        guard !hasPickup else { return }
+
+        fuelPickupSpawnTimer += TimeInterval(delta)
+        guard fuelPickupSpawnTimer >= nextFuelPickupSpawnDelay else { return }
+
+        fuelPickupSpawnTimer = 0
+        scheduleNextFuelPickupSpawn(initial: false)
+        spawnFuelPickup()
+    }
+
+    private func spawnFuelPickup() {
+        guard !isGameOver, !isLevelComplete else { return }
+        guard let pickup = FuelPickupFactory.makePickup() else {
+            #if DEBUG
+            print("[Game3DController] Failed to spawn fuel pickup — gas.usdz not loaded")
+            #endif
+            return
+        }
+
+        pickup.position = FuelPickupFactory.spawnPosition(near: playerRoot.position)
+
+        let hitRadius = CGFloat(FuelPickupConfig.collectionRadius)
+        let shape = SCNPhysicsShape(geometry: SCNSphere(radius: hitRadius))
+        let body = SCNPhysicsBody(type: .kinematic, shape: shape)
+        body.categoryBitMask = PhysicsCategory.fuelPickup
+        body.contactTestBitMask = PhysicsCategory.player
+        body.collisionBitMask = PhysicsCategory.none
+        pickup.physicsBody = body
+
+        worldNode.addChildNode(pickup)
+
+        #if DEBUG
+        print(
+            "[Game3DController] Fuel pickup spawned at",
+            pickup.position,
+            "player:",
+            playerRoot.position
+        )
+        #endif
+    }
+
+    private func checkFuelPickupCollection() {
+        let playerCenter = playerRoot.presentation.worldPosition
+        let radius = FuelPickupConfig.collectionRadius
+
+        for node in worldNode.childNodes where node.name == "fuelPickup" {
+            let pickupCenter = node.presentation.worldPosition
+            if distance(playerCenter, pickupCenter) <= radius {
+                collectFuelPickup(node)
+                break
+            }
+        }
+    }
+
+    private func collectFuelPickup(_ pickup: SCNNode) {
+        guard pickup.name == "fuelPickup", pickup.parent != nil else { return }
+
+        let worldPosition = pickup.presentation.worldPosition
+        pickup.removeFromParentNode()
+        addFuelRefill()
+        addFuelCollectionBurst(at: worldPosition)
+    }
+
+    private func addFuelRefill() {
+        let bonus = levelConfig.fuelDuration * FuelPickupConfig.refillFraction
+        fuelRemaining = min(levelConfig.fuelDuration, fuelRemaining + bonus)
+        onFuelChange?(fuelRemaining, levelConfig.fuelDuration, isBoosting)
+        onFuelPickupCollected?()
+    }
+
+    private func addFuelCollectionBurst(at position: SCNVector3) {
+        let burst = SCNNode(geometry: SCNSphere(radius: 0.2))
+        let material = SCNMaterial()
+        material.diffuse.contents = UIColor(red: 0.35, green: 0.95, blue: 0.55, alpha: 1)
+        material.emission.contents = UIColor(red: 0.2, green: 0.8, blue: 0.45, alpha: 1)
+        burst.geometry?.materials = [material]
+        burst.position = position
+        worldNode.addChildNode(burst)
+
+        let grow = SCNAction.scale(to: 2.2, duration: 0.16)
+        let fade = SCNAction.fadeOut(duration: 0.16)
+        burst.runAction(SCNAction.sequence([SCNAction.group([grow, fade]), .removeFromParentNode()]))
     }
 
     private func fireBullet() {
@@ -559,6 +681,15 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         if (maskA == PhysicsCategory.player && maskB == PhysicsCategory.enemy)
             || (maskB == PhysicsCategory.player && maskA == PhysicsCategory.enemy) {
             triggerGameOver(outOfFuel: false)
+            return
+        }
+
+        if maskA == PhysicsCategory.player && maskB == PhysicsCategory.fuelPickup {
+            collectFuelPickup(contact.nodeB)
+            return
+        }
+        if maskB == PhysicsCategory.player && maskA == PhysicsCategory.fuelPickup {
+            collectFuelPickup(contact.nodeA)
             return
         }
 

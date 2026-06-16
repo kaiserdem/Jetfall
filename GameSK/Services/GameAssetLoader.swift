@@ -42,6 +42,7 @@ final class GameAssetLoader {
 
             self.reportProgress(0.74)
             AsteroidFactory.prepareTemplate()
+            FuelPickupFactory.prepareTemplate()
 
             self.reportProgress(0.9)
 

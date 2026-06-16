@@ -12,6 +12,7 @@ final class GameHUDView: UIView {
     private let progressLabel = UILabel()
     private let scoreLabel = UILabel()
     private let fuelGauge = FuelGaugeView()
+    private let fuelPickupBanner = UILabel()
 
     let pauseButton = AviatorNavButton(style: .labeled(symbol: "pause.fill", title: "Pause"))
 
@@ -59,6 +60,18 @@ final class GameHUDView: UIView {
 
         fuelGauge.translatesAutoresizingMaskIntoConstraints = false
 
+        fuelPickupBanner.translatesAutoresizingMaskIntoConstraints = false
+        fuelPickupBanner.text = "+30%"
+        fuelPickupBanner.textAlignment = .center
+        fuelPickupBanner.alpha = 0
+        fuelPickupBanner.isHidden = true
+        GameStyle.styleHUDLabel(fuelPickupBanner, size: 28, weight: .heavy)
+        fuelPickupBanner.textColor = GameStyle.gaugeAmber
+        fuelPickupBanner.layer.shadowColor = UIColor.black.cgColor
+        fuelPickupBanner.layer.shadowOpacity = 0.45
+        fuelPickupBanner.layer.shadowRadius = 4
+        fuelPickupBanner.layer.shadowOffset = CGSize(width: 0, height: 2)
+
         topRow.addSubview(pauseButton)
         topRow.addSubview(levelTitleLabel)
         topRow.addSubview(topTrailingSpacer)
@@ -71,6 +84,7 @@ final class GameHUDView: UIView {
 
         hudStack.addArrangedSubview(topRow)
         hudStack.addArrangedSubview(statsRow)
+        addSubview(fuelPickupBanner)
         addSubview(hudStack)
 
         NSLayoutConstraint.activate([
@@ -108,7 +122,10 @@ final class GameHUDView: UIView {
             scoreLabel.trailingAnchor.constraint(equalTo: progressLabel.trailingAnchor),
             scoreLabel.bottomAnchor.constraint(equalTo: statsPanel.bottomAnchor, constant: -10),
 
-            statsRow.heightAnchor.constraint(equalToConstant: 58)
+            statsRow.heightAnchor.constraint(equalToConstant: 58),
+
+            fuelPickupBanner.centerXAnchor.constraint(equalTo: fuelGauge.centerXAnchor),
+            fuelPickupBanner.bottomAnchor.constraint(equalTo: fuelGauge.topAnchor, constant: -6)
         ])
     }
 
@@ -127,5 +144,29 @@ final class GameHUDView: UIView {
 
     func updateFuel(remaining: TimeInterval, total: TimeInterval, afterburnerActive: Bool = false) {
         fuelGauge.update(remaining: remaining, total: total, afterburnerActive: afterburnerActive)
+    }
+
+    func showFuelPickupBonus(percent: Int = Int(FuelPickupConfig.refillFraction * 100)) {
+        fuelPickupBanner.text = "+\(percent)%"
+        fuelPickupBanner.isHidden = false
+        fuelPickupBanner.alpha = 0
+        fuelPickupBanner.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
+
+        UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseOut]) {
+            self.fuelPickupBanner.alpha = 1
+            self.fuelPickupBanner.transform = .identity
+        }
+
+        fuelGauge.flashPickupRefill()
+
+        UIView.animate(
+            withDuration: 0.28,
+            delay: FuelPickupConfig.refillBannerDuration - 0.28,
+            options: [.curveEaseIn]
+        ) {
+            self.fuelPickupBanner.alpha = 0
+        } completion: { _ in
+            self.fuelPickupBanner.isHidden = true
+        }
     }
 }

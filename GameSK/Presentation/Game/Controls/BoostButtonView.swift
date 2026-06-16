@@ -45,9 +45,9 @@ final class BoostButtonView: UIView {
         if pressed {
             GameStyle.styleControlButtonPressed(button)
             button.backgroundColor = GameStyle.gaugeAmber.withAlphaComponent(0.35)
+            button.layer.borderColor = GameStyle.gaugeAmber.withAlphaComponent(0.65).cgColor
         } else {
             GameStyle.styleControlButtonReleased(button)
-            button.backgroundColor = nil
         }
         button.transform = pressed ? CGAffineTransform(scaleX: 0.92, y: 0.92) : .identity
     }

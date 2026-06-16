@@ -147,6 +147,12 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             }
         }
 
+        gameController.onFuelPickupCollected = { [weak self] in
+            DispatchQueue.main.async {
+                self?.hudView.showFuelPickupBonus()
+            }
+        }
+
         gameController.onLevelComplete = { [weak self] level, hasNextLevel, result in
             DispatchQueue.main.async {
                 guard let self else { return }

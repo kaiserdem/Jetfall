@@ -9,6 +9,8 @@ final class FuelGaugeView: UIView {
     private var fillWidthConstraint: NSLayoutConstraint?
     private var fillFraction: CGFloat = 1
     private var isAfterburnerActive = false
+    private var refillFlashTimer: Timer?
+    private var refillFlashTicks = 0
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -79,6 +81,54 @@ final class FuelGaugeView: UIView {
         fillView.backgroundColor = fraction <= 0.2 ? GameStyle.gaugeLowRed : GameStyle.gaugeAmber
         setAfterburnerHighlight(afterburnerActive)
         setNeedsLayout()
+    }
+
+    func flashPickupRefill(duration: TimeInterval = FuelPickupConfig.refillBannerDuration) {
+        refillFlashTimer?.invalidate()
+        refillFlashTicks = 0
+        applyRefillFlashHighlight(true)
+
+        refillFlashTimer = Timer.scheduledTimer(withTimeInterval: 0.22, repeats: true) { [weak self] timer in
+            guard let self else {
+                timer.invalidate()
+                return
+            }
+
+            self.refillFlashTicks += 1
+            let isOn = self.refillFlashTicks % 2 == 0
+            self.applyRefillFlashHighlight(isOn)
+
+            if TimeInterval(self.refillFlashTicks) * 0.22 >= duration {
+                timer.invalidate()
+                self.refillFlashTimer = nil
+                self.applyRefillFlashHighlight(false)
+            }
+        }
+    }
+
+    private func applyRefillFlashHighlight(_ active: Bool) {
+        if active {
+            layer.borderWidth = 2
+            layer.borderColor = GameStyle.gaugeAmber.cgColor
+            trackView.layer.borderWidth = 2
+            trackView.layer.borderColor = GameStyle.gaugeAmber.withAlphaComponent(0.85).cgColor
+            fillView.backgroundColor = GameStyle.gaugeAmber
+            titleLabel.textColor = GameStyle.gaugeAmber
+        } else if isAfterburnerActive {
+            setAfterburnerHighlight(true)
+        } else {
+            layer.borderWidth = 1
+            layer.borderColor = GameStyle.borderSteel.cgColor
+            trackView.layer.borderWidth = 1
+            trackView.layer.borderColor = GameStyle.borderSteel.cgColor
+            fillView.backgroundColor = fillFraction <= 0.2 ? GameStyle.gaugeLowRed : GameStyle.gaugeAmber
+            GameStyle.styleHUDLabel(titleLabel, size: 13, weight: .heavy)
+            titleLabel.text = "FUEL"
+        }
+    }
+
+    deinit {
+        refillFlashTimer?.invalidate()
     }
 
     private func setAfterburnerHighlight(_ active: Bool) {
