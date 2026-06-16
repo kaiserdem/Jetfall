@@ -26,7 +26,7 @@ final class MissionTargetsBadge: UIView {
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         contentStack.axis = .horizontal
         contentStack.alignment = .center
-        contentStack.spacing = 6
+        contentStack.spacing = 3
         contentStack.isUserInteractionEnabled = false
 
         iconView.translatesAutoresizingMaskIntoConstraints = false
