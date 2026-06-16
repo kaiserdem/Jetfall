@@ -13,6 +13,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private let worldNode = SCNNode()
     private var activeDirections = Set<MoveDirection>()
     private var isFiring = false
+    private var isBoosting = false
     private var missionScoreTracker = MissionScoreTracker(level: 1)
     private var lastMissionScoreResult: MissionScoreResult?
     private var isGameOver = false
@@ -150,6 +151,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         guard !isPaused, !isGameOver, !isLevelComplete else { return }
         isPaused = true
         isFiring = false
+        isBoosting = false
         fireTimer = 0
         activeDirections = []
         scene.isPaused = true
@@ -175,6 +177,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         scene.isPaused = false
         scnView?.isPlaying = true
         isFiring = false
+        isBoosting = false
         fireTimer = 0
         asteroidSpawnTimer = 0
         activeDirections = []
@@ -222,6 +225,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         guard !isLevelComplete else { return }
         isLevelComplete = true
         isFiring = false
+        isBoosting = false
         activeDirections = []
 
         let result = missionScoreTracker.finalize(
@@ -253,8 +257,21 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         WorldBuilder3D.updateStars(
             for: scene,
             playerPosition: playerRoot.position,
-            delta: delta
+            delta: delta,
+            forwardRate: starfieldForwardRate()
         )
+    }
+
+    private func starfieldForwardRate() -> Float {
+        let boost = isBoosting ? PlaneFlightPerformance.afterburnerSpeedMultiplier : 1
+        let normalizedApproach = levelConfig.approachSpeed / 24
+        return planeCruiseMultiplier * boost * normalizedApproach
+    }
+
+    private func forwardScroll(delta: Float) -> Float {
+        levelConfig.approachSpeed * planeCruiseMultiplier * (
+            isBoosting ? PlaneFlightPerformance.afterburnerSpeedMultiplier : 1
+        ) * delta
     }
 
     // MARK: - Input
@@ -270,6 +287,11 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         if !firing {
             fireTimer = 0
         }
+    }
+
+    func setBoosting(_ boosting: Bool) {
+        guard !isGameOver, !isLevelComplete, !isPaused else { return }
+        isBoosting = boosting
     }
 
     // MARK: - Loop
@@ -351,7 +373,10 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     }
 
     private func updateFuel(delta: Float) {
-        fuelRemaining -= TimeInterval(delta)
+        let fuelRate: Float = isBoosting
+            ? PlaneFlightPerformance.afterburnerFuelMultiplier
+            : 1
+        fuelRemaining -= TimeInterval(delta * fuelRate)
         onFuelChange?(max(0, fuelRemaining), levelConfig.fuelDuration)
 
         if fuelRemaining <= 0 {
@@ -360,7 +385,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     }
 
     private func scrollWorld(delta: Float) {
-        let offset = levelConfig.approachSpeed * planeCruiseMultiplier * delta
+        let offset = forwardScroll(delta: delta)
         for node in worldNode.childNodes {
             node.position.z -= offset
             if node.position.z < -15 {
@@ -567,6 +592,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         guard !isGameOver else { return }
         isGameOver = true
         isFiring = false
+        isBoosting = false
         activeDirections = []
 
         DispatchQueue.main.async { [weak self] in

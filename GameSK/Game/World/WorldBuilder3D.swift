@@ -37,7 +37,8 @@ enum WorldBuilder3D {
     static func updateStars(
         for scene: SCNScene,
         playerPosition: SCNVector3,
-        delta: Float
+        delta: Float,
+        forwardRate: Float = 1
     ) {
         if !tracksPlayer {
             lastPlayerX = playerPosition.x
@@ -52,8 +53,8 @@ enum WorldBuilder3D {
 
         starOffsetX += -playerDeltaX * 0.007
         starOffsetY += -playerDeltaY * 0.007
-        starOffsetX += delta * 0.0035
-        starOffsetY += delta * 0.0028
+        starOffsetX += delta * 0.0035 * forwardRate
+        starOffsetY += delta * 0.0028 * forwardRate
 
         scene.background.contentsTransform = SCNMatrix4MakeTranslation(starOffsetX, starOffsetY, 0)
     }

@@ -92,7 +92,7 @@ final class ShopPlaneCell: UICollectionViewCell {
         cruiseLabel.translatesAutoresizingMaskIntoConstraints = false
         cruiseLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         cruiseLabel.textColor = GameStyle.textSecondary
-        cruiseLabel.numberOfLines = 2
+        cruiseLabel.numberOfLines = 4
 
         priceLabel.translatesAutoresizingMaskIntoConstraints = false
         priceLabel.font = .monospacedDigitSystemFont(ofSize: 15, weight: .bold)
@@ -261,7 +261,7 @@ final class ShopPlaneCell: UICollectionViewCell {
 
         nameLabel.text = plane.name
         aircraftTag.text = plane.callSign
-        cruiseLabel.text = plane.cruiseSpeedDetailText()
+        cruiseLabel.text = plane.aircraftSpecsText()
         priceLabel.text = formattedPrice(for: plane)
 
         let isOwned = PlayerPlaneStore.isOwned(plane.id)

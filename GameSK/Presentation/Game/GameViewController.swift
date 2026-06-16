@@ -1,7 +1,7 @@
 import SceneKit
 import UIKit
 
-class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDelegate {
+class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDelegate, BoostButtonDelegate {
 
     var startingLevel = 1
 
@@ -12,6 +12,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
     private let missionResultView = MissionResultView()
     private let dPadView = VirtualDPadView()
     private let fireButtonView = FireButtonView()
+    private let boostButtonView = BoostButtonView()
     private var isPauseMenuVisible = false
     private var currentScore = 0
     private var lastMissionResult: MissionResultView.Result?
@@ -95,6 +96,10 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         fireButtonView.delegate = self
         view.addSubview(fireButtonView)
 
+        boostButtonView.translatesAutoresizingMaskIntoConstraints = false
+        boostButtonView.delegate = self
+        view.addSubview(boostButtonView)
+
         let sideInset: CGFloat = 20
         let bottomInset: CGFloat = 18
 
@@ -107,7 +112,12 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
             fireButtonView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: sideInset),
             fireButtonView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -bottomInset),
             fireButtonView.widthAnchor.constraint(equalToConstant: 88),
-            fireButtonView.heightAnchor.constraint(equalToConstant: 88)
+            fireButtonView.heightAnchor.constraint(equalToConstant: 88),
+
+            boostButtonView.leadingAnchor.constraint(equalTo: fireButtonView.trailingAnchor, constant: 10),
+            boostButtonView.bottomAnchor.constraint(equalTo: fireButtonView.bottomAnchor),
+            boostButtonView.widthAnchor.constraint(equalToConstant: 88),
+            boostButtonView.heightAnchor.constraint(equalToConstant: 88)
         ])
     }
 
@@ -188,6 +198,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
     private func presentPause() {
         dPadView.clearAll()
         fireButtonView.clear()
+        boostButtonView.clear()
         gameController.pause()
         setControlsEnabled(false)
         isPauseMenuVisible = true
@@ -206,8 +217,10 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
     private func setControlsEnabled(_ enabled: Bool) {
         dPadView.isUserInteractionEnabled = enabled
         fireButtonView.isUserInteractionEnabled = enabled
+        boostButtonView.isUserInteractionEnabled = enabled
         dPadView.alpha = enabled ? 1 : 0.45
         fireButtonView.alpha = enabled ? 1 : 0.45
+        boostButtonView.alpha = enabled ? 1 : 0.45
     }
 
     private func presentHangarShop() {
@@ -221,6 +234,7 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         lastMissionResult = result
         dPadView.clearAll()
         fireButtonView.clear()
+        boostButtonView.clear()
         setControlsEnabled(false)
         hudView.setPauseEnabled(false)
         missionResultView.present(result)
@@ -261,6 +275,10 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
 
     func fireButton(_ button: FireButtonView, didChangePressed isPressed: Bool) {
         gameController.setFiring(isPressed)
+    }
+
+    func boostButton(_ button: BoostButtonView, didChangePressed isPressed: Bool) {
+        gameController.setBoosting(isPressed)
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {

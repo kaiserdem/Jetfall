@@ -30,17 +30,32 @@ struct ShopPlane: Equatable {
         id == 1 ? 0.65 : 1.10
     }
 
-    /// Nominal in-sector cruise for a standard interceptor (~280 km/s).
-    private static let referenceCruiseKmPerSec: Float = 280
-
     /// Display cruise velocity derived from the gameplay multiplier.
     var cruiseVelocityKmPerSec: Int {
-        Int((Self.referenceCruiseKmPerSec * cruiseSpeedMultiplier).rounded())
+        PlaneFlightPerformance.cruiseVelocityKmPerSec(planeMultiplier: cruiseSpeedMultiplier)
+    }
+
+    var afterburnerVelocityKmPerSec: Int {
+        PlaneFlightPerformance.afterburnerVelocityKmPerSec(planeMultiplier: cruiseSpeedMultiplier)
     }
 
     func cruiseSpeedDetailText() -> String {
         let flightClass = id == 1 ? "patrol" : "intercept"
         return "Cruise velocity: \(cruiseVelocityKmPerSec) km/s · \(flightClass)"
+    }
+
+    func afterburnerDetailText() -> String {
+        "Afterburner velocity: \(afterburnerVelocityKmPerSec) km/s"
+    }
+
+    func afterburnerFuelDetailText() -> String {
+        let flow = PlaneFlightPerformance.afterburnerFuelFlowKgPerSec(planeMultiplier: cruiseSpeedMultiplier)
+        let formatted = flow.formatted(.number.precision(.fractionLength(1)))
+        return "Afterburner fuel flow: \(formatted) kg/s"
+    }
+
+    func aircraftSpecsText() -> String {
+        "\(cruiseSpeedDetailText())\n\(afterburnerDetailText())\n\(afterburnerFuelDetailText())"
     }
 
     func isLevelRequirementMet() -> Bool {
