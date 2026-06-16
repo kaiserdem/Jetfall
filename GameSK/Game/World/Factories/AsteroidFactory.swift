@@ -3,35 +3,80 @@ import UIKit
 
 enum AsteroidFactory {
 
-    private static var templates: [String: SCNNode] = [:]
+    private static var template: SCNNode?
 
-    private static let asteroidResourceNames = ["asteroid1", "asteroid2"]
+    private static let resourceName = "asteroid1"
     private static let targetSpan: Float = 2.4
 
     static func prepareTemplate() {
-        for resourceName in asteroidResourceNames where templates[resourceName] == nil {
-            if let template = loadTemplate(named: resourceName) {
-                templates[resourceName] = template
-            } else {
-                #if DEBUG
-                print("[AsteroidFactory] Failed to load \(resourceName).usdz")
-                #endif
-            }
+        guard template == nil else { return }
+
+        if let loaded = loadTemplate(named: resourceName) {
+            template = loaded
+        } else {
+            #if DEBUG
+            print("[AsteroidFactory] Failed to load \(resourceName).usdz")
+            #endif
         }
     }
 
     static func makeAsteroid() -> SCNNode? {
         prepareTemplate()
-
-        let availableNames = asteroidResourceNames.filter { templates[$0] != nil }
-        guard let resourceName = availableNames.randomElement(),
-              let template = templates[resourceName] else {
-            return nil
-        }
+        guard let template else { return nil }
 
         let asteroid = template.clone()
         asteroid.name = "enemy"
+        applyTint(to: asteroid, color: spawnTint())
         return asteroid
+    }
+
+    private static func spawnTint() -> UIColor {
+        varyTint(randomRockTint(), amount: 0.03)
+    }
+
+    private static func randomRockTint() -> UIColor {
+        if Bool.random() {
+            return UIColor(
+                hue: CGFloat.random(in: 0.52...0.66),
+                saturation: CGFloat.random(in: 0.10...0.28),
+                brightness: CGFloat.random(in: 0.60...0.82),
+                alpha: 1
+            )
+        }
+
+        return UIColor(
+            hue: CGFloat.random(in: 0.03...0.13),
+            saturation: CGFloat.random(in: 0.14...0.36),
+            brightness: CGFloat.random(in: 0.58...0.86),
+            alpha: 1
+        )
+    }
+
+    private static func varyTint(_ color: UIColor, amount: CGFloat) -> UIColor {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+
+        func jitter(_ channel: CGFloat) -> CGFloat {
+            min(1, max(0, channel + CGFloat.random(in: -amount...amount)))
+        }
+
+        return UIColor(red: jitter(red), green: jitter(green), blue: jitter(blue), alpha: alpha)
+    }
+
+    private static func applyTint(to node: SCNNode, color: UIColor) {
+        if let geometry = node.geometry {
+            let uniqueGeometry = geometry.copy() as? SCNGeometry ?? geometry
+            uniqueGeometry.materials = geometry.materials.map { material in
+                let copy = material.copy() as? SCNMaterial ?? material
+                copy.multiply.contents = color
+                return copy
+            }
+            node.geometry = uniqueGeometry
+        }
+        node.childNodes.forEach { applyTint(to: $0, color: color) }
     }
 
     static func makeTumbleAction() -> SCNAction {
