@@ -165,7 +165,7 @@ final class HangarShopViewController: UIViewController {
         planeHintLabel.translatesAutoresizingMaskIntoConstraints = false
         GameStyle.styleSubtitleLabel(planeHintLabel, size: 14)
         planeHintLabel.textAlignment = .center
-        planeHintLabel.numberOfLines = 2
+        planeHintLabel.numberOfLines = 3
         planeHintLabel.lineBreakMode = .byWordWrapping
 
         actionButton.translatesAutoresizingMaskIntoConstraints = false
@@ -396,7 +396,7 @@ final class HangarShopViewController: UIViewController {
 
         if isEquipped {
             planeHintLabel.text = planeHint(
-                stats: plane.priceText(),
+                stats: plane.shopSpecsText(),
                 status: "Currently equipped for missions"
             )
             GameStyle.applyMissionLaunchButton(actionButton, title: "Equipped", style: .locked)
@@ -404,7 +404,7 @@ final class HangarShopViewController: UIViewController {
             actionButton.alpha = 0.45
         } else if isOwned {
             planeHintLabel.text = planeHint(
-                stats: plane.priceText(),
+                stats: plane.shopSpecsText(),
                 status: "Owned — select to fly this aircraft"
             )
             GameStyle.applyMissionLaunchButton(actionButton, title: "Equip Aircraft", style: .active)
@@ -412,7 +412,7 @@ final class HangarShopViewController: UIViewController {
             actionButton.alpha = 1
         } else if !levelsMet {
             planeHintLabel.text = planeHint(
-                stats: plane.unlockRequirementText(),
+                stats: "\(plane.cruiseSpeedDetailText()) · \(plane.unlockRequirementText())",
                 status: "Complete more sectors to unlock purchase"
             )
             GameStyle.applyMissionLaunchButton(actionButton, title: "Locked", style: .locked)
@@ -420,7 +420,7 @@ final class HangarShopViewController: UIViewController {
             actionButton.alpha = 0.45
         } else if !canAfford {
             planeHintLabel.text = planeHint(
-                stats: plane.priceText(),
+                stats: plane.shopSpecsText(),
                 status: "Earn more hangar credits from missions"
             )
             GameStyle.applyMissionLaunchButton(actionButton, title: "Insufficient Credits", style: .locked)
@@ -428,7 +428,7 @@ final class HangarShopViewController: UIViewController {
             actionButton.alpha = 0.45
         } else {
             planeHintLabel.text = planeHint(
-                stats: plane.unlockRequirementText(),
+                stats: "\(plane.cruiseSpeedDetailText()) · \(plane.unlockRequirementText())",
                 status: "Ready to purchase for \(plane.priceText())"
             )
             GameStyle.applyMissionLaunchButton(

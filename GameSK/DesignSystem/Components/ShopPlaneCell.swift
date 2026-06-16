@@ -250,7 +250,7 @@ final class ShopPlaneCell: UICollectionViewCell {
 
         nameLabel.text = plane.name
         aircraftTag.text = plane.callSign
-        priceLabel.text = formattedPrice(for: plane)
+        priceLabel.text = "\(plane.cruiseSpeedShortText()) · \(formattedPrice(for: plane))"
 
         let isOwned = PlayerPlaneStore.isOwned(plane.id)
         let isEquipped = PlayerPlaneStore.isEquipped(plane.id)
@@ -388,7 +388,7 @@ final class ShopPlaneCell: UICollectionViewCell {
     private func applyLockedStyle(plane: ShopPlane) {
         lockedInfoCollapsedHeight?.isActive = false
         requirementsStack.isHidden = false
-        unlockRequirementLabel.text = plane.unlockRequirementText()
+        unlockRequirementLabel.text = "\(plane.cruiseSpeedDetailText()) · \(plane.unlockRequirementText())"
         priceLabel.textColor = GameStyle.textSecondary
 
         statusBadge.isHidden = false
@@ -409,7 +409,7 @@ final class ShopPlaneCell: UICollectionViewCell {
     private func applyAvailableStyle(plane: ShopPlane) {
         lockedInfoCollapsedHeight?.isActive = false
         requirementsStack.isHidden = false
-        unlockRequirementLabel.text = plane.unlockRequirementText()
+        unlockRequirementLabel.text = "\(plane.cruiseSpeedDetailText()) · \(plane.unlockRequirementText())"
         priceLabel.textColor = GameStyle.gaugeAmber
 
         statusBadge.isHidden = false

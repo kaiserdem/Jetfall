@@ -25,6 +25,26 @@ struct ShopPlane: Equatable {
         }
     }
 
+    /// Applied to level cruise speed — starter is a bit slower, all others a bit faster.
+    var cruiseSpeedMultiplier: Float {
+        id == 1 ? 0.65 : 1.10
+    }
+
+    func cruiseSpeedShortText() -> String {
+        id == 1 ? "Steady cruise" : "Fast cruise"
+    }
+
+    func cruiseSpeedDetailText() -> String {
+        let rating = Int(cruiseSpeedMultiplier * 100)
+        return id == 1
+            ? "Cruise speed: Steady (\(rating)%)"
+            : "Cruise speed: Fast (\(rating)%)"
+    }
+
+    func shopSpecsText() -> String {
+        "\(cruiseSpeedDetailText()) · \(priceText())"
+    }
+
     func isLevelRequirementMet() -> Bool {
         LevelProgressStore.highestUnlockedLevel >= requiredUnlockedLevel
     }
@@ -67,5 +87,9 @@ enum ShopPlaneCatalog {
 
     static func modelResourceName(for planeID: Int) -> String {
         plane(for: planeID)?.modelResourceName ?? "plane1"
+    }
+
+    static func cruiseSpeedMultiplier(for planeID: Int) -> Float {
+        plane(for: planeID)?.cruiseSpeedMultiplier ?? 1
     }
 }

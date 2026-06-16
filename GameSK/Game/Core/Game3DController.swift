@@ -43,6 +43,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private let enemyHitRadius: Float = 2.1
     private let bulletHitRadius: Float = 0.35
     private var activeBullets: [ActiveBullet] = []
+    private let planeCruiseMultiplier: Float
 
     var onScoreChange: ((Int) -> Void)?
     var onLevelProgress: ((Int, Int, Int) -> Void)?
@@ -67,6 +68,9 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         bankNode = assembly.bankNode
         propellerNode = assembly.propellerNode
         hasPropeller = assembly.hasPropeller
+        planeCruiseMultiplier = ShopPlaneCatalog.cruiseSpeedMultiplier(
+            for: PlayerPlaneStore.selectedPlaneID
+        )
         playerRoot.addChildNode(assembly.rootNode)
 
         super.init()
@@ -356,7 +360,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     }
 
     private func scrollWorld(delta: Float) {
-        let offset = levelConfig.approachSpeed * delta
+        let offset = levelConfig.approachSpeed * planeCruiseMultiplier * delta
         for node in worldNode.childNodes {
             node.position.z -= offset
             if node.position.z < -15 {
