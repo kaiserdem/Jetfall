@@ -6,6 +6,7 @@ final class PauseMenuView: UIView {
     var onRestart: (() -> Void)?
     var onExit: (() -> Void)?
     var onShop: (() -> Void)?
+    var onSettings: (() -> Void)?
 
     private let dimView = UIView()
     private let panel = UIView()
@@ -13,6 +14,7 @@ final class PauseMenuView: UIView {
     private let continueButton = UIButton(type: .system)
     private let restartButton = UIButton(type: .system)
     private let shopButton = UIButton(type: .system)
+    private let settingsButton = UIButton(type: .system)
     private let exitButton = UIButton(type: .system)
 
     override init(frame: CGRect) {
@@ -53,6 +55,10 @@ final class PauseMenuView: UIView {
         GameStyle.applySecondaryButton(shopButton, title: "Shop")
         shopButton.addTarget(self, action: #selector(shopTapped), for: .touchUpInside)
 
+        settingsButton.translatesAutoresizingMaskIntoConstraints = false
+        GameStyle.applySecondaryButton(settingsButton, title: "Settings")
+        settingsButton.addTarget(self, action: #selector(settingsTapped), for: .touchUpInside)
+
         exitButton.translatesAutoresizingMaskIntoConstraints = false
         exitButton.setTitle("Exit", for: .normal)
         exitButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
@@ -70,6 +76,7 @@ final class PauseMenuView: UIView {
         panel.addSubview(continueButton)
         panel.addSubview(restartButton)
         panel.addSubview(shopButton)
+        panel.addSubview(settingsButton)
         panel.addSubview(exitButton)
 
         NSLayoutConstraint.activate([
@@ -99,7 +106,11 @@ final class PauseMenuView: UIView {
             shopButton.leadingAnchor.constraint(equalTo: continueButton.leadingAnchor),
             shopButton.trailingAnchor.constraint(equalTo: continueButton.trailingAnchor),
 
-            exitButton.topAnchor.constraint(equalTo: shopButton.bottomAnchor, constant: 12),
+            settingsButton.topAnchor.constraint(equalTo: shopButton.bottomAnchor, constant: 12),
+            settingsButton.leadingAnchor.constraint(equalTo: continueButton.leadingAnchor),
+            settingsButton.trailingAnchor.constraint(equalTo: continueButton.trailingAnchor),
+
+            exitButton.topAnchor.constraint(equalTo: settingsButton.bottomAnchor, constant: 12),
             exitButton.leadingAnchor.constraint(equalTo: continueButton.leadingAnchor),
             exitButton.trailingAnchor.constraint(equalTo: continueButton.trailingAnchor),
             exitButton.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -24)
@@ -142,6 +153,10 @@ final class PauseMenuView: UIView {
 
     @objc private func shopTapped() {
         onShop?()
+    }
+
+    @objc private func settingsTapped() {
+        onSettings?()
     }
 
     @objc private func exitTapped() {

@@ -10,6 +10,17 @@ enum AsteroidFactory {
     private static let resourceName = "asteroid1"
     private static let targetSpan: Float = 2.4
 
+    /// World-space hit radius that roughly matches the visible rock mesh.
+    static func collisionRadius(for node: SCNNode) -> Float {
+        let (bboxMin, bboxMax) = node.boundingBox
+        let span = Swift.max(
+            bboxMax.x - bboxMin.x,
+            bboxMax.y - bboxMin.y,
+            bboxMax.z - bboxMin.z
+        )
+        return max(1.25, span * 0.58)
+    }
+
     static func prepareTemplate() {
         guard template == nil else { return }
 

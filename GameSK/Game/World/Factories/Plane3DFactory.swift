@@ -15,9 +15,6 @@ enum Plane3DFactory {
     /// Normalized model span for fighters (plane2 baseline).
     private static let modelTargetSpan: Float = 3.8
 
-    /// In-game flight scale relative to the normalized span.
-    private static let gameplayScaleFactor: Float = 0.9
-
     /// Scout Mk.I (plane1) is ~15% smaller than other fighters.
     private static let plane1ScaleFactor: Float = 0.85
 
@@ -26,8 +23,7 @@ enum Plane3DFactory {
     static let menuPreviewScale: Float = 2.7
 
     private static func targetSpan(for resourceName: String) -> Float {
-        let baseSpan = resourceName == "plane1" ? modelTargetSpan * plane1ScaleFactor : modelTargetSpan
-        return baseSpan * gameplayScaleFactor
+        resourceName == "plane1" ? modelTargetSpan * plane1ScaleFactor : modelTargetSpan
     }
 
     /// Plane for forward flight — nose points along +Z.

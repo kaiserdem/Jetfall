@@ -52,6 +52,7 @@ final class GameAssetLoader {
                 AmmunitionPickupFactory.prepareHUDIcon()
                 AsteroidFactory.prepareHUDIcon()
                 FuelPickupFactory.prepareHUDIcon()
+                GameAudioService.shared.prepare()
                 self.reportProgress(1)
                 self.finishLoading()
             }

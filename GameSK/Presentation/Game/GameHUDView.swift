@@ -9,6 +9,7 @@ final class GameHUDView: UIView {
     private let statsPanel = MissionStatsPanel()
     private let fuelPickupBanner = UILabel()
     private let ammoPickupBanner = UILabel()
+    private let crosshairView = CrosshairView()
 
     let pauseButton = AviatorNavButton(style: .labeled(title: "Menu"))
 
@@ -67,7 +68,11 @@ final class GameHUDView: UIView {
         hudStack.addArrangedSubview(statsPanel)
         addSubview(fuelPickupBanner)
         addSubview(ammoPickupBanner)
+        addSubview(crosshairView)
         addSubview(hudStack)
+        bringSubviewToFront(crosshairView)
+
+        updateCrosshairVisibility()
 
         NSLayoutConstraint.activate([
             hudStack.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 10),
@@ -97,8 +102,17 @@ final class GameHUDView: UIView {
             fuelPickupBanner.centerYAnchor.constraint(
                 equalTo: safeAreaLayoutGuide.centerYAnchor,
                 constant: -52
-            )
+            ),
+
+            crosshairView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            crosshairView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            crosshairView.widthAnchor.constraint(equalToConstant: 40),
+            crosshairView.heightAnchor.constraint(equalToConstant: 40)
         ])
+    }
+
+    func updateCrosshairVisibility() {
+        crosshairView.isHidden = !GameSettingsStore.isCrosshairEnabled
     }
 
     func setPauseEnabled(_ enabled: Bool) {

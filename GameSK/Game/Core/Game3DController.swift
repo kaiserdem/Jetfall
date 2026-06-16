@@ -48,11 +48,13 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private let propellerSpeed: Float = 24
     private let bulletRange: Float = 400
     private let bulletSpeed: Float = 320
-    private let asteroidHitRadius: Float = 1.1
     private let bulletHitRadius: Float = 0.22
     private var activeBullets: [ActiveBullet] = []
     private var asteroidHitsRemaining: [ObjectIdentifier: Int] = [:]
+    private var asteroidHitRadii: [ObjectIdentifier: Float] = [:]
     private let planeCruiseMultiplier: Float
+    private let planeModelRoot: SCNNode
+    private var planeScale: Float
 
     var onAmmoChange: ((Int, Int) -> Void)?
     var onAmmoPickupCollected: ((Int) -> Void)?
@@ -82,13 +84,16 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         self.currentLevel = max(1, min(LevelConfigFactory.totalLevels, startingLevel))
 
         let assembly = Plane3DFactory.makeFlightPlane(for: PlayerPlaneStore.selectedPlaneID)
+        planeModelRoot = assembly.rootNode
+        planeScale = GameSettingsStore.planeSizeMultiplier
+        planeModelRoot.scale = SCNVector3(planeScale, planeScale, planeScale)
         bankNode = assembly.bankNode
         propellerNode = assembly.propellerNode
         hasPropeller = assembly.hasPropeller
         planeCruiseMultiplier = ShopPlaneCatalog.cruiseSpeedMultiplier(
             for: PlayerPlaneStore.selectedPlaneID
         )
-        playerRoot.addChildNode(assembly.rootNode)
+        playerRoot.addChildNode(planeModelRoot)
 
         super.init()
 
@@ -117,7 +122,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         playerRoot.name = "playerRoot"
         scene.rootNode.addChildNode(playerRoot)
 
-        let playerBox = SCNBox(width: 2.2, height: 0.8, length: 2.8, chamferRadius: 0)
+        let playerBox = SCNBox(
+            width: CGFloat(2.2 * planeScale),
+            height: CGFloat(0.8 * planeScale),
+            length: CGFloat(2.8 * planeScale),
+            chamferRadius: 0
+        )
         let shape = SCNPhysicsShape(geometry: playerBox)
         let body = SCNPhysicsBody(type: .kinematic, shape: shape)
         body.categoryBitMask = PhysicsCategory.player
@@ -129,6 +139,29 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
         setupCamera()
         Plane3DFactory.addLights(to: scene.rootNode)
+    }
+
+    func applyPlaneSizeFromSettings() {
+        planeScale = GameSettingsStore.planeSizeMultiplier
+        planeModelRoot.scale = SCNVector3(planeScale, planeScale, planeScale)
+        updatePlayerPhysicsBody()
+    }
+
+    private func updatePlayerPhysicsBody() {
+        let playerBox = SCNBox(
+            width: CGFloat(2.2 * planeScale),
+            height: CGFloat(0.8 * planeScale),
+            length: CGFloat(2.8 * planeScale),
+            chamferRadius: 0
+        )
+        let shape = SCNPhysicsShape(geometry: playerBox)
+        let body = SCNPhysicsBody(type: .kinematic, shape: shape)
+        body.categoryBitMask = PhysicsCategory.player
+        body.contactTestBitMask = PhysicsCategory.enemy
+            | PhysicsCategory.fuelPickup
+            | PhysicsCategory.ammoPickup
+        body.collisionBitMask = PhysicsCategory.none
+        playerRoot.physicsBody = body
     }
 
     private func setupCamera() {
@@ -226,9 +259,11 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         clearAmmoPickups()
         clearBullets()
         asteroidHitsRemaining.removeAll()
+        asteroidHitRadii.removeAll()
         cometEffects.reset()
         spawnInitialAsteroids()
         notifyLevelProgress()
+        applyPlaneSizeFromSettings()
     }
 
     private func clearFuelPickups() {
@@ -522,8 +557,8 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             Float.random(in: 0...(Float.pi * 2))
         )
 
-        let hitRadius: CGFloat = CGFloat(asteroidHitRadius)
-        let shape = SCNPhysicsShape(geometry: SCNSphere(radius: hitRadius))
+        let collisionRadius = AsteroidFactory.collisionRadius(for: asteroid)
+        let shape = SCNPhysicsShape(geometry: SCNSphere(radius: CGFloat(collisionRadius)))
         let body = SCNPhysicsBody(type: .kinematic, shape: shape)
         body.categoryBitMask = PhysicsCategory.enemy
         body.contactTestBitMask = PhysicsCategory.player
@@ -533,16 +568,20 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         asteroid.runAction(AsteroidFactory.makeTumbleAction())
 
         worldNode.addChildNode(asteroid)
-        registerAsteroidHits(asteroid)
+        registerAsteroidHits(asteroid, collisionRadius: collisionRadius)
         spawnAmmoPickup(alongside: asteroid)
     }
 
-    private func registerAsteroidHits(_ asteroid: SCNNode) {
-        asteroidHitsRemaining[ObjectIdentifier(asteroid)] = levelConfig.hitsPerAsteroid
+    private func registerAsteroidHits(_ asteroid: SCNNode, collisionRadius: Float) {
+        let id = ObjectIdentifier(asteroid)
+        asteroidHitsRemaining[id] = levelConfig.hitsPerAsteroid
+        asteroidHitRadii[id] = collisionRadius
     }
 
     private func unregisterAsteroidHits(_ asteroid: SCNNode) {
-        asteroidHitsRemaining.removeValue(forKey: ObjectIdentifier(asteroid))
+        let id = ObjectIdentifier(asteroid)
+        asteroidHitsRemaining.removeValue(forKey: id)
+        asteroidHitRadii.removeValue(forKey: id)
     }
 
     private var activeAmmoPickupCount: Int {
@@ -771,6 +810,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
 
         ammoRemaining -= 1
         onAmmoChange?(ammoRemaining, ammoCapacity)
+        GameAudioService.shared.playShoot()
         prioritizeAmmoPickupIfNeeded()
 
         let bullet = SCNNode(geometry: SCNSphere(radius: CGFloat(bulletHitRadius)))
@@ -805,7 +845,6 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
         guard !activeBullets.isEmpty else { return }
 
         let step = bulletSpeed * delta
-        let hitRadius = asteroidHitRadius + bulletHitRadius
         var remainingBullets: [ActiveBullet] = []
 
         for var bullet in activeBullets {
@@ -825,7 +864,7 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
             if let enemy = enemyHitByBullet(
                 from: startPosition,
                 to: endPosition,
-                hitRadius: hitRadius
+                bulletRadius: bulletHitRadius
             ) {
                 bullet.node.removeFromParentNode()
                 handleBulletHit(enemy: enemy)
@@ -842,9 +881,12 @@ final class Game3DController: NSObject, SCNSceneRendererDelegate, SCNPhysicsCont
     private func enemyHitByBullet(
         from start: SCNVector3,
         to end: SCNVector3,
-        hitRadius: Float
+        bulletRadius: Float
     ) -> SCNNode? {
         for enemy in worldNode.childNodes where enemy.name == "enemy" {
+            let id = ObjectIdentifier(enemy)
+            let asteroidRadius = asteroidHitRadii[id] ?? AsteroidFactory.collisionRadius(for: enemy)
+            let hitRadius = asteroidRadius + bulletRadius
             let center = enemy.presentation.worldPosition
             if segmentIntersectsSphere(
                 segmentStart: start,

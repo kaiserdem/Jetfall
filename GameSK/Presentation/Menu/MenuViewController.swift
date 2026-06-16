@@ -3,11 +3,13 @@ import UIKit
 final class MenuViewController: UIViewController {
 
     private var starfieldView: StarfieldBackgroundView?
+    private let scrollView = UIScrollView()
     private let contentStack = UIStackView()
     private let dashboardPanel = MenuDashboardPanel()
     private let aircraftPreview = MenuAircraftPreviewView()
     private let continueButton = UIButton(type: .system)
     private let shopButton = UIButton(type: .system)
+    private let settingsButton = UIButton(type: .system)
     private let activityIndicator = UIActivityIndicatorView(style: .medium)
     private let bootOverlay = BootLoadingOverlayView()
 
@@ -41,6 +43,10 @@ final class MenuViewController: UIViewController {
     }
 
     private func setupContentStack() {
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.alwaysBounceVertical = true
+        scrollView.showsVerticalScrollIndicator = false
+
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         contentStack.axis = .vertical
         contentStack.spacing = 16
@@ -49,12 +55,19 @@ final class MenuViewController: UIViewController {
         contentStack.addArrangedSubview(dashboardPanel)
         contentStack.addArrangedSubview(aircraftPreview)
 
-        view.addSubview(contentStack)
+        scrollView.addSubview(contentStack)
+        view.addSubview(scrollView)
 
         NSLayoutConstraint.activate([
-            contentStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            contentStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-            contentStack.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+
+            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 12),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 24),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -24),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24)
         ])
     }
 
@@ -67,8 +80,13 @@ final class MenuViewController: UIViewController {
         GameStyle.applySecondaryButton(shopButton, title: "Hangar Shop")
         shopButton.addTarget(self, action: #selector(shopTapped), for: .touchUpInside)
 
+        settingsButton.translatesAutoresizingMaskIntoConstraints = false
+        GameStyle.applySecondaryButton(settingsButton, title: "Settings")
+        settingsButton.addTarget(self, action: #selector(settingsTapped), for: .touchUpInside)
+
         contentStack.addArrangedSubview(continueButton)
         contentStack.addArrangedSubview(shopButton)
+        contentStack.addArrangedSubview(settingsButton)
 
         contentStack.setCustomSpacing(20, after: aircraftPreview)
     }
@@ -164,6 +182,17 @@ final class MenuViewController: UIViewController {
         shop.modalPresentationStyle = .fullScreen
         shop.modalTransitionStyle = .crossDissolve
         present(shop, animated: true)
+    }
+
+    @objc private func settingsTapped() {
+        presentSettings()
+    }
+
+    private func presentSettings() {
+        let settings = SettingsViewController()
+        settings.modalPresentationStyle = .fullScreen
+        settings.modalTransitionStyle = .crossDissolve
+        present(settings, animated: true)
     }
 
     @objc private func continueTapped() {

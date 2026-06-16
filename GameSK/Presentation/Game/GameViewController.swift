@@ -45,6 +45,27 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         ])
 
         hudView.pauseButton.addTarget(self, action: #selector(pauseTapped), for: .touchUpInside)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(settingsDidChange),
+            name: .gameSettingsDidChange,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        hudView.updateCrosshairVisibility()
+    }
+
+    @objc private func settingsDidChange() {
+        hudView.updateCrosshairVisibility()
+        gameController?.applyPlaneSizeFromSettings()
     }
 
     private func setupMissionResult() {
@@ -86,6 +107,9 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         }
         pauseMenuView.onShop = { [weak self] in
             self?.presentHangarShop()
+        }
+        pauseMenuView.onSettings = { [weak self] in
+            self?.presentSettings()
         }
     }
 
@@ -264,6 +288,13 @@ class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDeleg
         shop.modalPresentationStyle = .fullScreen
         shop.modalTransitionStyle = .crossDissolve
         present(shop, animated: true)
+    }
+
+    private func presentSettings() {
+        let settings = SettingsViewController()
+        settings.modalPresentationStyle = .fullScreen
+        settings.modalTransitionStyle = .crossDissolve
+        present(settings, animated: true)
     }
 
     private func presentMissionResult(_ result: MissionResultView.Result) {
