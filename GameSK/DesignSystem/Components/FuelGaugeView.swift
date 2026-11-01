@@ -127,9 +127,12 @@ final class FuelGaugeView: UIView {
         }
     }
 
-    @MainActor
-    deinit {
-        refillFlashTimer?.invalidate()
+    override func willMove(toWindow newWindow: UIWindow?) {
+        super.willMove(toWindow: newWindow)
+        if newWindow == nil {
+            refillFlashTimer?.invalidate()
+            refillFlashTimer = nil
+        }
     }
 
     private func setAfterburnerHighlight(_ active: Bool) {

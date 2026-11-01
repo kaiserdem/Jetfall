@@ -121,9 +121,11 @@ final class StarfieldBackgroundView: UIView {
         gradientLayer.frame = gradientOverlay.bounds
     }
 
-    @MainActor
-    deinit {
-        stopAnimating()
+    override func willMove(toWindow newWindow: UIWindow?) {
+        super.willMove(toWindow: newWindow)
+        if newWindow == nil {
+            stopAnimating()
+        }
     }
 
     private func setup() {

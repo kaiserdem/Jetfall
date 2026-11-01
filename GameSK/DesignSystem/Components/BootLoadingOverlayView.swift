@@ -25,9 +25,11 @@ final class BootLoadingOverlayView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    @MainActor
-    deinit {
-        stopDisplayLink()
+    override func willMove(toWindow newWindow: UIWindow?) {
+        super.willMove(toWindow: newWindow)
+        if newWindow == nil {
+            stopDisplayLink()
+        }
     }
 
     private func setup() {
