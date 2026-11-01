@@ -54,7 +54,7 @@ class GameViewController: ImmersiveViewController, VirtualDPadDelegate, FireButt
         )
     }
 
-    deinit {
+    isolated deinit {
         NotificationCenter.default.removeObserver(self)
     }
 
