@@ -1,7 +1,7 @@
 import SceneKit
 import UIKit
 
-class GameViewController: UIViewController, VirtualDPadDelegate, FireButtonDelegate, BoostButtonDelegate {
+class GameViewController: ImmersiveViewController, VirtualDPadDelegate, FireButtonDelegate, BoostButtonDelegate {
 
     var startingLevel = 1
 

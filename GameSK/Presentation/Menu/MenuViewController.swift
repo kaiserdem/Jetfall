@@ -1,6 +1,6 @@
 import UIKit
 
-final class MenuViewController: UIViewController {
+final class MenuViewController: ImmersiveViewController {
 
     private var starfieldView: StarfieldBackgroundView?
     private let scrollView = UIScrollView()

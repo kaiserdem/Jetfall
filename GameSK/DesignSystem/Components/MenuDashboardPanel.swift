@@ -44,7 +44,6 @@ struct MenuDashboardSnapshot {
 final class MenuDashboardPanel: UIView {
 
     private let panel = UIView()
-    private let accentStripe = UIView()
     private let headerLabel = UILabel()
     private let rowsStack = UIStackView()
     private let nextSectorRow = MenuDashboardRow(caption: "NEXT SECTOR")
@@ -68,10 +67,6 @@ final class MenuDashboardPanel: UIView {
         GameStyle.stylePanel(panel, cornerRadius: 14)
         panel.backgroundColor = GameStyle.panelBlueDark.withAlphaComponent(0.9)
 
-        accentStripe.translatesAutoresizingMaskIntoConstraints = false
-        accentStripe.backgroundColor = GameStyle.gaugeAmber
-        accentStripe.layer.cornerRadius = 2
-
         headerLabel.translatesAutoresizingMaskIntoConstraints = false
         headerLabel.text = "PILOT STATUS"
         headerLabel.font = .systemFont(ofSize: 11, weight: .heavy)
@@ -86,7 +81,6 @@ final class MenuDashboardPanel: UIView {
         rowsStack.addArrangedSubview(aircraftRow)
 
         addSubview(panel)
-        panel.addSubview(accentStripe)
         panel.addSubview(headerLabel)
         panel.addSubview(rowsStack)
 
@@ -96,16 +90,11 @@ final class MenuDashboardPanel: UIView {
             panel.trailingAnchor.constraint(equalTo: trailingAnchor),
             panel.bottomAnchor.constraint(equalTo: bottomAnchor),
 
-            accentStripe.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 12),
-            accentStripe.topAnchor.constraint(equalTo: panel.topAnchor, constant: 14),
-            accentStripe.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -14),
-            accentStripe.widthAnchor.constraint(equalToConstant: 3),
-
             headerLabel.topAnchor.constraint(equalTo: panel.topAnchor, constant: 14),
-            headerLabel.leadingAnchor.constraint(equalTo: accentStripe.trailingAnchor, constant: 10),
+            headerLabel.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 14),
 
             rowsStack.topAnchor.constraint(equalTo: headerLabel.bottomAnchor, constant: 12),
-            rowsStack.leadingAnchor.constraint(equalTo: accentStripe.trailingAnchor, constant: 10),
+            rowsStack.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 14),
             rowsStack.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -14),
             rowsStack.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -14)
         ])

@@ -1,15 +1,32 @@
-
 import UIKit
+
+/// TEMP — remove before App Store submit.
+/// Gives enough credits + sector unlock to buy Sparrow II (plane 2).
+private enum TempHangarBoost {
+    static let isEnabled = false
+    static let credits = 5_000
+    static let unlockedLevel = 11
+}
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        applyTemporaryHangarBoostIfNeeded()
         GameAssetLoader.shared.beginPreloadingIfNeeded()
         GameAudioService.shared.prepare()
         return true
+    }
+
+    private func applyTemporaryHangarBoostIfNeeded() {
+        guard TempHangarBoost.isEnabled else { return }
+
+        if PlayerWallet.balance < TempHangarBoost.credits {
+            UserDefaults.standard.set(TempHangarBoost.credits, forKey: "gamesk.hangarCredits")
+        }
+        if LevelProgressStore.highestUnlockedLevel < TempHangarBoost.unlockedLevel {
+            LevelProgressStore.highestUnlockedLevel = TempHangarBoost.unlockedLevel
+        }
     }
 
     // MARK: UISceneSession Lifecycle

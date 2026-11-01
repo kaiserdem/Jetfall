@@ -1,6 +1,6 @@
 import UIKit
 
-final class LevelSelectViewController: UIViewController {
+final class LevelSelectViewController: ImmersiveViewController {
 
     private enum CarouselMetrics {
         static let cardWidthFraction: CGFloat = 0.78

@@ -1,6 +1,6 @@
 import UIKit
 
-final class SettingsViewController: UIViewController {
+final class SettingsViewController: ImmersiveViewController {
 
     private var starfieldView: StarfieldBackgroundView?
     private let contentStack = UIStackView()
