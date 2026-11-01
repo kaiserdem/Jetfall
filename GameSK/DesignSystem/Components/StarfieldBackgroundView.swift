@@ -121,6 +121,7 @@ final class StarfieldBackgroundView: UIView {
         gradientLayer.frame = gradientOverlay.bounds
     }
 
+    @MainActor
     deinit {
         stopAnimating()
     }

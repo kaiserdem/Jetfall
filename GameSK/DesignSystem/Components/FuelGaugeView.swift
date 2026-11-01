@@ -127,6 +127,7 @@ final class FuelGaugeView: UIView {
         }
     }
 
+    @MainActor
     deinit {
         refillFlashTimer?.invalidate()
     }

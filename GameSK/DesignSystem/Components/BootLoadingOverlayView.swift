@@ -25,6 +25,7 @@ final class BootLoadingOverlayView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    @MainActor
     deinit {
         stopDisplayLink()
     }
