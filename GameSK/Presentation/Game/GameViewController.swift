@@ -54,10 +54,6 @@ class GameViewController: ImmersiveViewController, VirtualDPadDelegate, FireButt
         )
     }
 
-    isolated deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         hudView.updateCrosshairVisibility()
